@@ -170,16 +170,7 @@ export default {
       success: ''
     }
   },
-  computed: {
-    totalPages() {
-      return Math.ceil(this.filteredOrders.length / this.ordersPerPage)
-    },
-    paginatedFilteredOrders() {
-      const start = (this.currentPage - 1) * this.ordersPerPage
-      const end = start + this.ordersPerPage
-      return this.filteredOrders.slice(start, end)
-    }
-  },
+
   async mounted() {
     await this.loadOrders()
   },
@@ -242,7 +233,17 @@ export default {
       return currentIndex > stepIndex
     },
     
-    get visiblePages() {
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.filteredOrders.length / this.ordersPerPage)
+    },
+    paginatedFilteredOrders() {
+      const start = (this.currentPage - 1) * this.ordersPerPage
+      const end = start + this.ordersPerPage
+      return this.filteredOrders.slice(start, end)
+    },
+    visiblePages() {
       const pages = []
       const total = this.totalPages
       const current = this.currentPage
