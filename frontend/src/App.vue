@@ -7,8 +7,10 @@
           Swiggy
         </h1>
         <div class="user-info">
-          <i class="fas fa-user-circle"></i>
-          <span>{{ currentUser.name }}</span>
+          <button class="profile-btn" @click="goToProfile">
+            <i class="fas fa-user-circle"></i>
+            <span>{{ currentUser.name }}</span>
+          </button>
           <span class="role-badge">{{ currentUser.role }}</span>
           <button class="btn btn-danger" @click="logout">
             <i class="fas fa-sign-out-alt"></i>
@@ -41,6 +43,9 @@ export default {
       this.currentUser = null
       localStorage.removeItem('currentUser')
       this.$router.push('/login')
+    },
+    goToProfile() {
+      this.$router.push(`/profile/${this.currentUser.id}`)
     }
   }
 }
@@ -53,5 +58,30 @@ export default {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+}
+
+.profile-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.profile-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 </style>

@@ -124,7 +124,7 @@ export default {
     async loadMyRestaurants() {
       try {
         const response = await axios.get('/api/restaurants');
-        this.myRestaurants = response.data.filter(r => r.hotelOwner?.id == this.id);
+        this.myRestaurants = response.data.filter(r => r.hotelOwnerId == this.id);
       } catch (error) {
         this.error = 'Failed to load restaurants';
       }

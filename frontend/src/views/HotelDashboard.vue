@@ -18,6 +18,10 @@
           <i class="fas fa-star"></i>
           Reviews
         </router-link>
+        <router-link :to="`/profile/${id}`" class="nav-tab" active-class="active">
+          <i class="fas fa-user-circle"></i>
+          Profile
+        </router-link>
       </div>
     </div>
     
@@ -368,7 +372,7 @@ export default {
     async loadMyRestaurants() {
       try {
         const response = await axios.get('/api/restaurants')
-        this.myRestaurants = response.data.filter(r => r.hotelOwner?.id == this.id)
+        this.myRestaurants = response.data.filter(r => r.hotelOwnerId == this.id)
         
         // Load reviews for each restaurant
         for (let restaurant of this.myRestaurants) {

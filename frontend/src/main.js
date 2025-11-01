@@ -7,6 +7,7 @@ import HotelDashboard from './views/HotelDashboard.vue'
 import ReviewsPage from './views/ReviewsPage.vue'
 import OrderHistory from './views/OrderHistory.vue'
 import UserOrderHistory from './views/UserOrderHistory.vue'
+import ProfilePage from './views/ProfilePage.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -40,6 +41,12 @@ const routes = [
     component: UserOrderHistory, 
     props: true,
     meta: { requiresAuth: true, role: 'USER' }
+  },
+  { 
+    path: '/profile/:id', 
+    component: ProfilePage, 
+    props: true,
+    meta: { requiresAuth: true }
   }
 ]
 
