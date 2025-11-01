@@ -30,6 +30,13 @@
             <i class="fas fa-map-marker-alt"></i>
             {{ restaurant.address }}
           </p>
+          <div class="restaurant-rating" v-if="restaurant.averageRating">
+            <div class="stars">
+              <i v-for="n in 5" :key="n" 
+                 :class="['fas fa-star', { active: n <= Math.round(restaurant.averageRating) }]"></i>
+            </div>
+            <span class="rating-text">{{ restaurant.averageRating.toFixed(1) }} ({{ restaurant.reviewCount }} reviews)</span>
+          </div>
           <button class="order-btn" @click="viewMenu(restaurant)">
             <i class="fas fa-eye"></i>
             View Menu
@@ -41,20 +48,39 @@
     <!-- Menu Items -->
     <div v-if="selectedRestaurant" class="card">
       <h3>Menu - {{ selectedRestaurant.name }}</h3>
-      <div v-for="item in menuItems" :key="item.id" class="menu-item">
-        <div class="item-info">
-          <h4>{{ item.name }} <span class="item-type" :class="item.type.toLowerCase()">{{ item.type }}</span></h4>
-          <p>{{ item.description }}</p>
-          <p class="price">${{ item.price }}</p>
-        </div>
-        <div class="item-actions">
-          <div v-if="getCartItem(item.id)" class="quantity-controls">
-            <button class="btn-qty" @click="decreaseQuantity(item.id)">-</button>
-            <span class="quantity">{{ getCartItem(item.id).quantity }}</span>
-            <button class="btn-qty" @click="increaseQuantity(item.id)">+</button>
-            <button class="btn btn-danger" @click="removeFromCart(item.id)">Remove</button>
+      <div class="menu-grid">
+        <div v-for="item in menuItems" :key="item.id" class="food-card">
+          <div class="food-image">
+            <img :src="`/api/menu-items/image/${item.id}`" :alt="item.name" @error="handleImageError">
+            <div class="food-type" :class="item.type.toLowerCase()">
+              <i :class="item.type === 'VEG' ? 'fas fa-circle' : 'fas fa-stop'"></i>
+            </div>
           </div>
-          <button v-else class="btn btn-success" @click="addToCart(item)">Add to Cart</button>
+          <div class="food-content">
+            <h5>{{ item.name }}</h5>
+            <p class="food-description">{{ item.description }}</p>
+            <div class="item-rating" v-if="item.averageRating">
+              <div class="stars">
+                <i v-for="n in 5" :key="n" 
+                   :class="['fas fa-star', { active: n <= Math.round(item.averageRating) }]"></i>
+              </div>
+              <span class="rating-text">{{ item.averageRating.toFixed(1) }}</span>
+            </div>
+            <div class="food-footer">
+              <span class="food-price">₹{{ item.price }}</span>
+              <div class="food-actions">
+                <div v-if="getCartItem(item.id)" class="quantity-controls">
+                  <button class="btn-qty" @click="decreaseQuantity(item.id)">-</button>
+                  <span class="quantity">{{ getCartItem(item.id).quantity }}</span>
+                  <button class="btn-qty" @click="increaseQuantity(item.id)">+</button>
+                </div>
+                <button v-else class="btn-add" @click="addToCart(item)">
+                  <i class="fas fa-plus"></i>
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -264,8 +290,27 @@ export default {
       try {
         const response = await axios.get('/api/restaurants')
         this.restaurants = response.data
+        
+        // Load reviews for each restaurant
+        for (let restaurant of this.restaurants) {
+          await this.loadRestaurantReviews(restaurant)
+        }
       } catch (error) {
         this.error = 'Failed to load restaurants'
+      }
+    },
+    
+    async loadRestaurantReviews(restaurant) {
+      try {
+        const response = await axios.get(`/api/menu-items/reviews/restaurant/${restaurant.id}`)
+        const reviews = response.data
+        if (reviews.length > 0) {
+          const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+          restaurant.averageRating = totalRating / reviews.length
+          restaurant.reviewCount = reviews.length
+        }
+      } catch (error) {
+        // Ignore review loading errors
       }
     },
     
@@ -275,8 +320,27 @@ export default {
         this.cart = []
         const response = await axios.get(`/api/menu-items/restaurant/${restaurant.id}`)
         this.menuItems = response.data
+        
+        // Load ratings for each menu item
+        for (let item of this.menuItems) {
+          await this.loadItemReviews(item)
+        }
       } catch (error) {
         this.error = 'Failed to load menu'
+      }
+    },
+    
+    async loadItemReviews(item) {
+      try {
+        const response = await axios.get(`/api/menu-items/reviews/item/${item.id}`)
+        const reviews = response.data
+        if (reviews.length > 0) {
+          const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+          item.averageRating = totalRating / reviews.length
+          item.reviewCount = reviews.length
+        }
+      } catch (error) {
+        // Ignore review loading errors
       }
     },
     
@@ -404,15 +468,21 @@ export default {
     
     async submitReview() {
       try {
-        // In a real app, you'd send this to a reviews endpoint
-        // await axios.post(`/api/orders/${this.currentOrderId}/review`, {
-        //   rating: this.rating,
-        //   review: this.review
-        // })
+        if (!this.rating) {
+          this.error = 'Please select a rating'
+          return
+        }
+        
+        const formData = new FormData()
+        formData.append('rating', this.rating)
+        formData.append('comment', this.review || '')
+        
+        await axios.post(`/api/menu-items/review/${this.currentOrderId}/user/${this.id}`, formData)
+        
         this.success = 'Thank you for your review!'
         this.closeReviewModal()
       } catch (error) {
-        this.error = 'Failed to submit review'
+        this.error = error.response?.data?.message || 'Failed to submit review'
       }
     },
     
@@ -470,6 +540,10 @@ Thank you for your order!
       const stepIndex = steps.indexOf(step)
       const currentIndex = steps.indexOf(currentStatus)
       return currentIndex > stepIndex
+    },
+    
+    handleImageError(event) {
+      event.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'
     }
   }
 }
@@ -585,46 +659,183 @@ Thank you for your order!
   box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
 }
 
-.menu-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.food-card {
   background: white;
-  border-radius: 12px;
-  margin: 16px 0;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: 1px solid #f0f0f0;
 }
 
-.item-info h4 {
+.food-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.food-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.food-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.food-card:hover .food-image img {
+  transform: scale(1.05);
+}
+
+.food-type {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.food-type.veg {
+  background: white;
+  color: #4CAF50;
+  border: 2px solid #4CAF50;
+}
+
+.food-type.non_veg {
+  background: white;
+  color: #f44336;
+  border: 2px solid #f44336;
+}
+
+.food-content {
+  padding: 16px;
+}
+
+.food-content h5 {
   margin: 0 0 8px 0;
-  color: #333;
   font-size: 18px;
-}
-
-.item-type {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 10px;
-  color: white;
-  font-weight: 500;
-  margin-left: 8px;
-}
-
-.item-type.veg {
-  background: #4CAF50;
-}
-
-.item-type.non_veg {
-  background: #f44336;
-}
-
-.price {
   font-weight: 600;
+  color: #333;
+  line-height: 1.3;
+}
+
+.food-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0 0 16px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.food-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.food-price {
+  font-size: 20px;
+  font-weight: 700;
   color: #ff6b35;
-  margin: 8px 0;
-  font-size: 16px;
+}
+
+.food-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.restaurant-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.restaurant-rating .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.restaurant-rating .stars i {
+  font-size: 14px;
+  color: #ddd;
+}
+
+.restaurant-rating .stars i.active {
+  color: #ffc107;
+}
+
+.rating-text {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.item-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.item-rating .stars {
+  display: flex;
+  gap: 1px;
+}
+
+.item-rating .stars i {
+  font-size: 12px;
+  color: #ddd;
+}
+
+.item-rating .stars i.active {
+  color: #ffc107;
+}
+
+.item-rating .rating-text {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
 }
 
 .cart {
@@ -692,36 +903,40 @@ Thank you for your order!
 .quantity-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  background: #f8f9fa;
+  border-radius: 20px;
+  padding: 4px;
 }
 
 .btn-qty {
-  width: 32px;
-  height: 32px;
-  border: 2px solid #ff6b35;
-  background: white;
-  color: #ff6b35;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #ff6b35;
+  color: white;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  font-size: 14px;
   transition: all 0.3s ease;
 }
 
 .btn-qty:hover {
-  background: #ff6b35;
-  color: white;
+  background: #e55a2b;
   transform: scale(1.1);
 }
 
 .quantity {
   font-weight: 600;
-  min-width: 24px;
+  min-width: 20px;
   text-align: center;
   color: #333;
-  font-size: 16px;
+  font-size: 14px;
+  padding: 0 8px;
 }
 
 .orders-list {
