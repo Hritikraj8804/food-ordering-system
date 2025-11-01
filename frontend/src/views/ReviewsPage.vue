@@ -21,6 +21,31 @@
       </div>
     </div>
 
+    <!-- Stats Summary -->
+    <div v-if="reviews.length > 0" class="stats-section">
+      <div class="stat-card">
+        <i class="fas fa-star"></i>
+        <div>
+          <h3>{{ averageRating.toFixed(1) }}</h3>
+          <p>Average Rating</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-comments"></i>
+        <div>
+          <h3>{{ reviews.length }}</h3>
+          <p>Total Reviews</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-thumbs-up"></i>
+        <div>
+          <h3>{{ positiveReviews }}</h3>
+          <p>Positive Reviews</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Reviews List -->
     <div class="reviews-container">
       <div v-if="reviews.length === 0" class="no-reviews">
@@ -30,7 +55,7 @@
         <p>Reviews will appear here once customers start rating your orders</p>
       </div>
 
-      <div v-for="review in reviews" :key="review.id" class="review-card">
+      <div v-for="review in paginatedReviews" :key="review.id" class="review-card">
         <div class="review-header">
           <div class="customer-info">
             <i class="fas fa-user-circle"></i>
@@ -63,30 +88,50 @@
           </button>
         </div>
       </div>
-    </div>
-
-    <!-- Stats Summary -->
-    <div class="stats-section">
-      <div class="stat-card">
-        <i class="fas fa-star"></i>
-        <div>
-          <h3>{{ averageRating.toFixed(1) }}</h3>
-          <p>Average Rating</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-comments"></i>
-        <div>
-          <h3>{{ reviews.length }}</h3>
-          <p>Total Reviews</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-thumbs-up"></i>
-        <div>
-          <h3>{{ positiveReviews }}</h3>
-          <p>Positive Reviews</p>
-        </div>
+      
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button 
+          class="page-btn" 
+          :disabled="currentPage === 1" 
+          @click="currentPage = 1"
+        >
+          First
+        </button>
+        <button 
+          class="page-btn" 
+          :disabled="currentPage === 1" 
+          @click="currentPage--"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <span v-for="page in visiblePages" :key="page">
+          <button 
+            v-if="page !== '...'"
+            class="page-btn" 
+            :class="{ active: page === currentPage }"
+            @click="currentPage = page"
+          >
+            {{ page }}
+          </button>
+          <span v-else class="page-dots">...</span>
+        </span>
+        
+        <button 
+          class="page-btn" 
+          :disabled="currentPage === totalPages" 
+          @click="currentPage++"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <button 
+          class="page-btn" 
+          :disabled="currentPage === totalPages" 
+          @click="currentPage = totalPages"
+        >
+          Last
+        </button>
       </div>
     </div>
   </div>
@@ -102,11 +147,49 @@ export default {
       reviews: [],
       myRestaurants: [],
       selectedRestaurantId: '',
+      currentPage: 1,
+      reviewsPerPage: 5,
       error: '',
       success: ''
     };
   },
   computed: {
+    totalPages() {
+      return Math.ceil(this.reviews.length / this.reviewsPerPage)
+    },
+    paginatedReviews() {
+      const start = (this.currentPage - 1) * this.reviewsPerPage
+      const end = start + this.reviewsPerPage
+      return this.reviews.slice(start, end)
+    },
+    visiblePages() {
+      const pages = []
+      const total = this.totalPages
+      const current = this.currentPage
+      
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) {
+          pages.push(i)
+        }
+      } else {
+        if (current <= 4) {
+          for (let i = 1; i <= 5; i++) pages.push(i)
+          pages.push('...')
+          pages.push(total)
+        } else if (current >= total - 3) {
+          pages.push(1)
+          pages.push('...')
+          for (let i = total - 4; i <= total; i++) pages.push(i)
+        } else {
+          pages.push(1)
+          pages.push('...')
+          for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+          pages.push('...')
+          pages.push(total)
+        }
+      }
+      return pages
+    },
     averageRating() {
       if (this.reviews.length === 0) return 0;
       const sum = this.reviews.reduce((acc, review) => acc + review.rating, 0);
@@ -143,6 +226,7 @@ export default {
           }
         }
         this.reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        this.currentPage = 1 // Reset to first page when loading reviews
       } catch (error) {
         this.error = 'Failed to load reviews';
       }
@@ -441,5 +525,52 @@ export default {
     .stat-card p {
       font-size: 14px;
       color: #666;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 32px;
+      padding: 20px;
+    }
+
+    .page-btn {
+      padding: 8px 12px;
+      border: 1px solid #e0e0e0;
+      background: white;
+      color: #666;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      min-width: 40px;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: #f8f9fa;
+      border-color: #ff6b35;
+      color: #ff6b35;
+    }
+
+    .page-btn.active {
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: white;
+      border-color: #ff6b35;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .page-dots {
+      padding: 8px 4px;
+      color: #666;
+    }
+
+    .stats-section {
+      margin-bottom: 32px;
     }
   </style>
