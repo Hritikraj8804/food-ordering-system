@@ -37,6 +37,7 @@ application-local.properties
 application-dev.properties
 *.log
 *.log.*
+logs/
 
 ### OS ###
 .DS_Store
