@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dto.OrderRequestDto;
+import entity.MenuItem;
 import entity.Order;
 import entity.OrderItem;
 import entity.OrderStatus;
@@ -14,6 +15,7 @@ import entity.Role;
 import entity.User;
 import exception.ResourceNotFoundException;
 import exception.UnauthorizedActionException;
+import repository.MenuItemRepository;
 import repository.OrderRepository;
 import repository.RestaurantRepository;
 
@@ -23,11 +25,14 @@ public class OrderService {
  private final OrderRepository orderRepository;
  private final UserService userService;
  private final RestaurantRepository restaurantRepository;
+ private final MenuItemRepository menuItemRepository;
 
- public OrderService(OrderRepository orderRepository, UserService userService, RestaurantRepository restaurantRepository) {
+ public OrderService(OrderRepository orderRepository, UserService userService, 
+                    RestaurantRepository restaurantRepository, MenuItemRepository menuItemRepository) {
      this.orderRepository = orderRepository;
      this.userService = userService;
      this.restaurantRepository = restaurantRepository;
+     this.menuItemRepository = menuItemRepository;
  }
 
  /**
@@ -51,13 +56,17 @@ public class OrderService {
      
      // Process items from the DTO
      double total = 0.0;
-     for (OrderItem item : orderRequestDto.getItems()) {
+     for (OrderRequestDto.OrderItemDto itemDto : orderRequestDto.getItems()) {
+         MenuItem menuItem = menuItemRepository.findById(itemDto.getMenuItemId())
+             .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
+             
          OrderItem orderItem = new OrderItem();
-         orderItem.setItemName(item.getItemName());
-         orderItem.setPrice(item.getPrice());
-         orderItem.setQuantity(item.getQuantity());
+         orderItem.setMenuItem(menuItem);
+         orderItem.setQuantity(itemDto.getQuantity());
+         orderItem.setPriceAtOrder(menuItem.getPrice()); // Lock in current price
+         orderItem.setOrder(newOrder);
          newOrder.addItem(orderItem);
-         total += item.getPrice() * item.getQuantity();
+         total += menuItem.getPrice() * itemDto.getQuantity();
      }
 
      newOrder.setTotalAmount(total);
@@ -85,5 +94,9 @@ public class OrderService {
  
  public List<Order> getOrdersByUser(Long userId) {
      return orderRepository.findByUserId(userId);
+ }
+ 
+ public List<Order> getOrdersByRestaurant(Long restaurantId) {
+     return orderRepository.findByRestaurantId(restaurantId);
  }
 }

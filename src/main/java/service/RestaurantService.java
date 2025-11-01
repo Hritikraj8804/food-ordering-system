@@ -25,6 +25,7 @@ public class RestaurantService {
   * Enforces the HOTEL role before creating a restaurant.
   */
  public Restaurant addRestaurant(Restaurant restaurant, Long hotelOwnerId) {
+     System.out.println("Looking for user with ID: " + hotelOwnerId);
      User hotelOwner = userService.getUserById(hotelOwnerId); 
 
      // *** ROLE CHECK: Throw 403 Forbidden if not a HOTEL ***

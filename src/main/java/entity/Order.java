@@ -3,6 +3,7 @@ package entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,7 +21,8 @@ import lombok.Data;
 //entity/Order.java
 @Entity
 @Table(name = "orders")
-@Data // Note: Use @ToString(exclude = "items") in Lombok to avoid infinite loop with bi-directional relations!
+@Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order {
  @Id
  @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +43,8 @@ public class Order {
 
  // OneToMany: One Order has Many OrderItems
  // cascade = ALL ensures that saving/deleting the Order saves/deletes the Items
- @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+ @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+ @com.fasterxml.jackson.annotation.JsonManagedReference
  private List<OrderItem> items = new ArrayList<>(); 
  
  // --- Helper Method for managing bi-directional relationship ---

@@ -65,4 +65,14 @@ public class UserController {
         // Return 200 OK status
         return ResponseEntity.ok(user);
     }
+    
+    /**
+     * GET /api/users
+     * Retrieves all users. Used for login functionality.
+     */
+    @GetMapping
+    public ResponseEntity<java.util.List<User>> getAllUsers() {
+        java.util.List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
 }

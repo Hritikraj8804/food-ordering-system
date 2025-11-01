@@ -56,4 +56,10 @@ public class OrderController {
 		Order updatedOrder = orderService.updateOrderStatus(orderId, status, updaterId);
 		return ResponseEntity.ok(updatedOrder);
 	}
+
+	// GET: /api/orders/restaurant/{restaurantId}
+	@GetMapping("/restaurant/{restaurantId}")
+	public ResponseEntity<List<Order>> getOrdersByRestaurant(@PathVariable Long restaurantId) {
+		return ResponseEntity.ok(orderService.getOrdersByRestaurant(restaurantId));
+	}
 }

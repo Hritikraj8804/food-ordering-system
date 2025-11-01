@@ -41,6 +41,12 @@ public class UserService {
  }
 
  public User getUserById(Long id) {
+     System.out.println("Searching for user ID: " + id);
+     List<User> allUsers = userRepository.findAll();
+     System.out.println("All users in database: " + allUsers.size());
+     for (User u : allUsers) {
+         System.out.println("User ID: " + u.getId() + ", Email: " + u.getEmail());
+     }
      return userRepository.findById(id)
              .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
  }

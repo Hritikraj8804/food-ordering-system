@@ -1,21 +1,28 @@
 <template>
-  <div class="card">
-    <div class="auth-tabs">
-      <button 
-        :class="['tab-btn', { active: isLogin }]" 
-        @click="switchToLogin"
-      >
-        Login
-      </button>
-      <button 
-        :class="['tab-btn', { active: !isLogin }]" 
-        @click="switchToRegister"
-      >
-        Register
-      </button>
-    </div>
-
-    <h2>{{ isLogin ? 'Login' : 'Register' }}</h2>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="brand-header">
+        <i class="fas fa-utensils brand-icon"></i>
+        <h1>Swiggy Clone</h1>
+        <p>Order food from your favorite restaurants</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <button 
+          :class="['tab-btn', { active: isLogin }]" 
+          @click="switchToLogin"
+        >
+          <i class="fas fa-sign-in-alt"></i>
+          Login
+        </button>
+        <button 
+          :class="['tab-btn', { active: !isLogin }]" 
+          @click="switchToRegister"
+        >
+          <i class="fas fa-user-plus"></i>
+          Register
+        </button>
+      </div>
     
     <div class="form-group">
       <label>Email:</label>
@@ -40,16 +47,26 @@
       </select>
     </div>
     
-    <button 
-      class="btn btn-primary" 
-      @click="isLogin ? login() : register()"
-      :disabled="loading"
-    >
-      {{ loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register') }}
-    </button>
-    
-    <div v-if="error" class="error">{{ error }}</div>
-    <div v-if="success" class="success">{{ success }}</div>
+      <button 
+        class="auth-btn" 
+        @click="isLogin ? login() : register()"
+        :disabled="loading"
+      >
+        <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+        <i v-else-if="isLogin" class="fas fa-sign-in-alt"></i>
+        <i v-else class="fas fa-user-plus"></i>
+        {{ loading ? 'Please wait...' : (isLogin ? 'Login' : 'Create Account') }}
+      </button>
+      
+      <div v-if="error" class="error">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ error }}
+      </div>
+      <div v-if="success" class="success">
+        <i class="fas fa-check-circle"></i>
+        {{ success }}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -170,28 +187,161 @@ export default {
 </script>
 
 <style scoped>
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.auth-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.brand-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.brand-icon {
+  font-size: 48px;
+  color: #ff6b35;
+  margin-bottom: 16px;
+}
+
+.brand-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.brand-header p {
+  color: #666;
+  font-size: 16px;
+}
+
 .auth-tabs {
   display: flex;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #ddd;
+  margin-bottom: 32px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 4px;
 }
 
 .tab-btn {
   flex: 1;
-  padding: 10px;
+  padding: 12px 16px;
   border: none;
-  background: #f8f9fa;
+  background: transparent;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  border-radius: 8px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .tab-btn.active {
   background: white;
-  border-bottom-color: #007bff;
-  color: #007bff;
+  color: #ff6b35;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.tab-btn:hover {
-  background: #e9ecef;
+.tab-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.5);
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.auth-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
+}
+
+.auth-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #f44336;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success {
+  background: #e8f5e8;
+  color: #2e7d32;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

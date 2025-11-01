@@ -1,5 +1,6 @@
 package entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -14,18 +15,23 @@ import lombok.Data;
 @Entity
 @Table(name = "order_items")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class OrderItem {
  @Id
  @GeneratedValue(strategy = GenerationType.IDENTITY)
  private Long id;
 
- private String itemName;
  private Integer quantity;
- private Double price;
+ private Double priceAtOrder; // Price when order was placed
+
+ @ManyToOne(fetch = FetchType.LAZY)
+ @JoinColumn(name = "menu_item_id", nullable = true)
+ private MenuItem menuItem;
 
  // ManyToOne: Many OrderItems belong to One Order
  @ManyToOne(fetch = FetchType.LAZY) 
  @JoinColumn(name = "order_id", nullable = false)
+ @com.fasterxml.jackson.annotation.JsonBackReference
  private Order order; // Bi-directional link back to the Order
 
  public Long getId() {
@@ -36,14 +42,6 @@ public class OrderItem {
 	this.id = id;
  }
 
- public String getItemName() {
-	return itemName;
- }
-
- public void setItemName(String itemName) {
-	this.itemName = itemName;
- }
-
  public Integer getQuantity() {
 	return quantity;
  }
@@ -52,12 +50,20 @@ public class OrderItem {
 	this.quantity = quantity;
  }
 
- public Double getPrice() {
-	return price;
+ public Double getPriceAtOrder() {
+	return priceAtOrder;
  }
 
- public void setPrice(Double price) {
-	this.price = price;
+ public void setPriceAtOrder(Double priceAtOrder) {
+	this.priceAtOrder = priceAtOrder;
+ }
+
+ public MenuItem getMenuItem() {
+	return menuItem;
+ }
+
+ public void setMenuItem(MenuItem menuItem) {
+	this.menuItem = menuItem;
  }
 
  public Order getOrder() {
