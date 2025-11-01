@@ -106,6 +106,21 @@
             <i class="fas fa-map-marker-alt"></i>
             <span>Delivery Address</span>
           </div>
+          
+          <!-- Saved Addresses Dropdown -->
+          <div v-if="savedAddresses.length > 0" class="saved-addresses">
+            <label class="address-label">
+              <i class="fas fa-bookmark"></i>
+              Choose from saved addresses:
+            </label>
+            <select v-model="selectedSavedAddress" @change="fillSavedAddress" class="address-select">
+              <option value="">Select a saved address</option>
+              <option v-for="address in savedAddresses" :key="address.id" :value="address">
+                {{ address.type }} - {{ address.fullAddress.substring(0, 50) }}{{ address.fullAddress.length > 50 ? '...' : '' }}
+              </option>
+            </select>
+          </div>
+          
           <div class="address-input-container">
             <div class="address-icon">
               <i class="fas fa-home"></i>
@@ -276,6 +291,8 @@ export default {
       cart: [],
       orders: [],
       deliveryAddress: '',
+      savedAddresses: [],
+      selectedSavedAddress: '',
       showReviewModal: false,
       currentOrderId: null,
       rating: 0,
@@ -297,6 +314,7 @@ export default {
   async mounted() {
     await this.loadRestaurants()
     await this.loadOrders()
+    await this.loadSavedAddresses()
   },
   methods: {
     async loadRestaurants() {
@@ -429,6 +447,7 @@ export default {
         this.success = `Order placed successfully! Total: $${this.cartTotal.toFixed(2)}`
         this.cart = []
         this.deliveryAddress = ''
+        this.selectedSavedAddress = ''
         this.selectedRestaurant = null
         this.menuItems = []
         await this.loadOrders()
@@ -565,6 +584,21 @@ Thank you for your order!
     
     handleImageError(event) {
       event.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'
+    },
+    
+    async loadSavedAddresses() {
+      try {
+        const response = await axios.get(`/api/addresses/user/${this.id}`)
+        this.savedAddresses = response.data
+      } catch (error) {
+        // Ignore errors - user might not have saved addresses
+      }
+    },
+    
+    fillSavedAddress() {
+      if (this.selectedSavedAddress && this.selectedSavedAddress.fullAddress) {
+        this.deliveryAddress = this.selectedSavedAddress.fullAddress
+      }
     },
     
 
@@ -1743,7 +1777,46 @@ Thank you for your order!
   font-style: italic;
 }
 
+.saved-addresses {
+  margin-bottom: 16px;
+}
 
+.address-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.address-label i {
+  color: #ff6b35;
+}
+
+.address-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.address-select:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+}
+
+.address-select option {
+  padding: 8px;
+  color: #333;
+}
 
 .btn:disabled {
   opacity: 0.6;
