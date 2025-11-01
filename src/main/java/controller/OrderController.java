@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import dto.OrderDto;
 import dto.OrderRequestDto;
 import entity.Order;
 import entity.OrderStatus;
@@ -72,7 +73,7 @@ public class OrderController {
 	        content = @Content(schema = @Schema(implementation = Order.class)))
 	})
 	@GetMapping("/user/{userId}")
-	public ResponseEntity<List<Order>> getOrdersByUser(
+	public ResponseEntity<List<OrderDto>> getOrdersByUser(
 	    @Parameter(description = "User ID", required = true, example = "1")
 	    @PathVariable Long userId) {
 		return ResponseEntity.ok(orderService.getOrdersByUser(userId));
@@ -111,7 +112,7 @@ public class OrderController {
 	        content = @Content(schema = @Schema(implementation = Order.class)))
 	})
 	@GetMapping("/restaurant/{restaurantId}")
-	public ResponseEntity<List<Order>> getOrdersByRestaurant(
+	public ResponseEntity<List<OrderDto>> getOrdersByRestaurant(
 	    @Parameter(description = "Restaurant ID", required = true, example = "1")
 	    @PathVariable Long restaurantId) {
 		return ResponseEntity.ok(orderService.getOrdersByRestaurant(restaurantId));

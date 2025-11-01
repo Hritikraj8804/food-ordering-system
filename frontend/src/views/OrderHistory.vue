@@ -187,7 +187,7 @@ export default {
     async loadOrders() {
       try {
         const response = await axios.get('/api/restaurants')
-        const myRestaurants = response.data.filter(r => r.hotelOwner?.id == this.id)
+        const myRestaurants = response.data.filter(r => r.hotelOwnerId == this.id)
         
         this.orders = []
         for (const restaurant of myRestaurants) {

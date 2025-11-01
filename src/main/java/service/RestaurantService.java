@@ -1,9 +1,11 @@
 package service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import dto.RestaurantDto;
 import entity.Restaurant;
 import entity.Role;
 import entity.User;
@@ -13,31 +15,35 @@ import repository.RestaurantRepository;
 @Service
 public class RestaurantService {
 
- private final RestaurantRepository restaurantRepository;
- private final UserService userService; 
+    private final RestaurantRepository restaurantRepository;
+    private final UserService userService; 
 
- public RestaurantService(RestaurantRepository restaurantRepository, UserService userService) {
-     this.restaurantRepository = restaurantRepository;
-     this.userService = userService;
- }
+    public RestaurantService(RestaurantRepository restaurantRepository, UserService userService) {
+        this.restaurantRepository = restaurantRepository;
+        this.userService = userService;
+    }
 
- /**
-  * Enforces the HOTEL role before creating a restaurant.
-  */
- public Restaurant addRestaurant(Restaurant restaurant, Long hotelOwnerId) {
-     System.out.println("Looking for user with ID: " + hotelOwnerId);
-     User hotelOwner = userService.getUserById(hotelOwnerId); 
+    public Restaurant addRestaurant(Restaurant restaurant, Long hotelOwnerId) {
+        User hotelOwner = userService.getUserById(hotelOwnerId); 
 
-     // *** ROLE CHECK: Throw 403 Forbidden if not a HOTEL ***
-     if (hotelOwner.getRole() != Role.HOTEL) {
-         throw new UnauthorizedActionException("Only users with the HOTEL role can add a restaurant.");
-     }
+        if (hotelOwner.getRole() != Role.HOTEL) {
+            throw new UnauthorizedActionException("Only users with the HOTEL role can add a restaurant.");
+        }
 
-     restaurant.setHotelOwner(hotelOwner);
-     return restaurantRepository.save(restaurant);
- }
+        restaurant.setHotelOwner(hotelOwner);
+        return restaurantRepository.save(restaurant);
+    }
 
- public List<Restaurant> getAllRestaurants() {
-     return restaurantRepository.findAll();
- }
+    public List<RestaurantDto> getAllRestaurants() {
+        return restaurantRepository.findAll().stream()
+            .map(restaurant -> new RestaurantDto(
+                restaurant.getId(),
+                restaurant.getName(),
+                restaurant.getAddress(),
+                restaurant.getCuisineType(),
+                restaurant.getHotelOwner().getId(),
+                restaurant.getHotelOwner().getName()
+            ))
+            .collect(Collectors.toList());
+    }
 }

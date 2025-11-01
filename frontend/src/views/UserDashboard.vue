@@ -14,6 +14,10 @@
           <i class="fas fa-history"></i>
           My Orders
         </router-link>
+        <router-link :to="`/profile/${id}`" class="nav-tab" active-class="active">
+          <i class="fas fa-user-circle"></i>
+          Profile
+        </router-link>
       </div>
     </div>
     
@@ -113,20 +117,7 @@
               required
             ></textarea>
           </div>
-          <div class="address-suggestions">
-            <div class="suggestion-item" @click="fillSampleAddress('home')">
-              <i class="fas fa-home"></i>
-              <span>Home</span>
-            </div>
-            <div class="suggestion-item" @click="fillSampleAddress('work')">
-              <i class="fas fa-briefcase"></i>
-              <span>Work</span>
-            </div>
-            <div class="suggestion-item" @click="fillSampleAddress('other')">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>Other</span>
-            </div>
-          </div>
+
         </div>
         
         <button class="btn btn-primary" @click="placeOrder" :disabled="!deliveryAddress.trim()">
@@ -313,9 +304,13 @@ export default {
         const response = await axios.get('/api/restaurants')
         this.restaurants = response.data
         
-        // Load reviews for each restaurant
+        // Load reviews for each restaurant (ignore errors)
         for (let restaurant of this.restaurants) {
-          await this.loadRestaurantReviews(restaurant)
+          try {
+            await this.loadRestaurantReviews(restaurant)
+          } catch (error) {
+            // Ignore review loading errors
+          }
         }
       } catch (error) {
         this.error = 'Failed to load restaurants'
@@ -343,9 +338,13 @@ export default {
         const response = await axios.get(`/api/menu-items/restaurant/${restaurant.id}`)
         this.menuItems = response.data
         
-        // Load ratings for each menu item
+        // Load ratings for each menu item (ignore errors)
         for (let item of this.menuItems) {
-          await this.loadItemReviews(item)
+          try {
+            await this.loadItemReviews(item)
+          } catch (error) {
+            // Ignore review loading errors
+          }
         }
       } catch (error) {
         this.error = 'Failed to load menu'
@@ -568,14 +567,7 @@ Thank you for your order!
       event.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'
     },
     
-    fillSampleAddress(type) {
-      const addresses = {
-        home: 'Flat 101, Green Valley Apartments, Sector 12, Near City Mall, Landmark: Opposite Metro Station',
-        work: 'Office 205, Tech Tower, IT Park, Phase 2, Near Food Court, Landmark: Behind Shopping Complex',
-        other: 'House No. 45, Rose Garden Colony, Main Road, Near Hospital, Landmark: Next to Pharmacy'
-      }
-      this.deliveryAddress = addresses[type]
-    }
+
   }
 }
 </script>
@@ -1751,38 +1743,7 @@ Thank you for your order!
   font-style: italic;
 }
 
-.address-suggestions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
 
-.suggestion-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-}
-
-.suggestion-item:hover {
-  border-color: #ff6b35;
-  background: #fff5f0;
-  color: #ff6b35;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
-}
-
-.suggestion-item i {
-  font-size: 16px;
-}
 
 .btn:disabled {
   opacity: 0.6;

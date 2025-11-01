@@ -6,8 +6,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import dto.MenuItemDto;
 import entity.MenuItem;
 import entity.Order;
 import entity.Restaurant;
@@ -68,61 +72,34 @@ public class MenuItemService {
         return savedItem;
     }
     
-    public List<MenuItem> getAvailableMenuItems(Long restaurantId) {
-        return menuItemRepository.findByRestaurantIdAndAvailableTrue(restaurantId);
+    public List<MenuItemDto> getAvailableMenuItems(Long restaurantId) {
+        return menuItemRepository.findByRestaurantIdAndAvailableTrue(restaurantId).stream()
+            .map(item -> new MenuItemDto(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.getPrice(),
+                item.getType(),
+                item.getAvailable(),
+                item.getRestaurant().getId(),
+                item.getRestaurant().getName()
+            ))
+            .collect(Collectors.toList());
     }
     
-    public List<MenuItem> getAllMenuItems(Long restaurantId) {
-        return menuItemRepository.findByRestaurantId(restaurantId);
-    }
-    
-    public MenuItem updateMenuItem(Long itemId, MenuItem updatedItem, Long ownerId, MultipartFile image) {
-        User owner = userRepository.findById(ownerId)
-            .orElseThrow(() -> new ResourceNotFoundException("Owner not found"));
-            
-        if (owner.getRole() != Role.HOTEL) {
-            throw new UnauthorizedActionException("Only HOTEL users can update menu items");
-        }
-        
-        MenuItem existingItem = menuItemRepository.findById(itemId)
-            .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
-            
-        if (!existingItem.getRestaurant().getHotelOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedActionException("You can only update your own menu items");
-        }
-        
-        existingItem.setName(updatedItem.getName());
-        existingItem.setDescription(updatedItem.getDescription());
-        existingItem.setPrice(updatedItem.getPrice());
-        existingItem.setType(updatedItem.getType());
-        if (updatedItem.getAvailable() != null) {
-            existingItem.setAvailable(updatedItem.getAvailable());
-        }
-        
-        if (image != null && !image.isEmpty()) {
-            saveImage(image, itemId);
-        }
-        
-        return menuItemRepository.save(existingItem);
-    }
-    
-    public void deleteMenuItem(Long itemId, Long ownerId) {
-        User owner = userRepository.findById(ownerId)
-            .orElseThrow(() -> new ResourceNotFoundException("Owner not found"));
-            
-        if (owner.getRole() != Role.HOTEL) {
-            throw new UnauthorizedActionException("Only HOTEL users can delete menu items");
-        }
-        
-        MenuItem item = menuItemRepository.findById(itemId)
-            .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
-            
-        if (!item.getRestaurant().getHotelOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedActionException("You can only delete your own menu items");
-        }
-        
-        menuItemRepository.delete(item);
-        deleteImage(itemId);
+    public List<MenuItemDto> getAllMenuItems(Long restaurantId) {
+        return menuItemRepository.findByRestaurantId(restaurantId).stream()
+            .map(item -> new MenuItemDto(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.getPrice(),
+                item.getType(),
+                item.getAvailable(),
+                item.getRestaurant().getId(),
+                item.getRestaurant().getName()
+            ))
+            .collect(Collectors.toList());
     }
     
     private void saveImage(MultipartFile image, Long itemId) {
@@ -137,17 +114,6 @@ public class MenuItemService {
             Files.copy(image.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image", e);
-        }
-    }
-    
-    private void deleteImage(Long itemId) {
-        try {
-            Path jpgPath = Paths.get("uploads/menu-images/" + itemId + ".jpg");
-            Path pngPath = Paths.get("uploads/menu-images/" + itemId + ".png");
-            Files.deleteIfExists(jpgPath);
-            Files.deleteIfExists(pngPath);
-        } catch (IOException e) {
-            // Ignore deletion errors
         }
     }
     
@@ -169,10 +135,6 @@ public class MenuItemService {
             throw new UnauthorizedActionException("You can only review your own orders");
         }
         
-        if (reviewRepository.findByOrderIdAndUserId(orderId, userId).isPresent()) {
-            throw new UnauthorizedActionException("You have already reviewed this order");
-        }
-        
         Review review = new Review();
         review.setOrder(order);
         review.setUser(user);
@@ -181,10 +143,6 @@ public class MenuItemService {
         review.setComment(comment);
         
         return reviewRepository.save(review);
-    }
-    
-    public List<Review> getOrderReviews(Long orderId) {
-        return reviewRepository.findByOrderId(orderId);
     }
     
     public List<Review> getRestaurantReviews(Long restaurantId) {

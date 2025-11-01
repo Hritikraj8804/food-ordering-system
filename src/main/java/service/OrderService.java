@@ -1,10 +1,12 @@
 package service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dto.OrderDto;
 import dto.OrderRequestDto;
 import entity.MenuItem;
 import entity.Order;
@@ -126,11 +128,40 @@ public class OrderService {
      return orderRepository.save(order);
  }
  
- public List<Order> getOrdersByUser(Long userId) {
-     return orderRepository.findByUserId(userId);
+ public List<OrderDto> getOrdersByUser(Long userId) {
+     return orderRepository.findByUserId(userId).stream()
+         .map(this::convertToDto)
+         .collect(Collectors.toList());
  }
  
- public List<Order> getOrdersByRestaurant(Long restaurantId) {
-     return orderRepository.findByRestaurantId(restaurantId);
+ public List<OrderDto> getOrdersByRestaurant(Long restaurantId) {
+     return orderRepository.findByRestaurantId(restaurantId).stream()
+         .map(this::convertToDto)
+         .collect(Collectors.toList());
+ }
+
+ private OrderDto convertToDto(Order order) {
+     List<OrderDto.OrderItemDto> itemDtos = order.getItems().stream()
+         .map(item -> new OrderDto.OrderItemDto(
+             item.getId(),
+             item.getQuantity(),
+             item.getPriceAtOrder(),
+             item.getMenuItem() != null ? item.getMenuItem().getName() : "Unknown Item",
+             item.getMenuItem() != null ? item.getMenuItem().getId() : null
+         ))
+         .collect(Collectors.toList());
+
+     return new OrderDto(
+         order.getId(),
+         order.getTotalAmount(),
+         order.getStatus().toString(),
+         order.getDeliveryAddress(),
+         order.getCreatedAt(),
+         order.getUser().getId(),
+         order.getUser().getName(),
+         order.getRestaurant().getId(),
+         order.getRestaurant().getName(),
+         itemDtos
+     );
  }
 }

@@ -50,6 +50,10 @@ public class UserService {
      return userRepository.findById(id)
              .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
  }
+
+ public User updateUser(User user) {
+     return userRepository.save(user);
+ }
 }
 
 

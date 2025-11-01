@@ -10,23 +10,23 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import dto.MenuItemDto;
 import entity.MenuItem;
 import entity.Review;
-import jakarta.validation.Valid;
 import service.MenuItemService;
 
 @RestController
 @RequestMapping("/api/menu-items")
+@CrossOrigin(origins = "http://localhost:3000")
 public class MenuItemController {
     
     private final MenuItemService menuItemService;
@@ -55,42 +55,15 @@ public class MenuItemController {
     }
     
     @GetMapping("/restaurant/{restaurantId}")
-    public ResponseEntity<List<MenuItem>> getMenuItems(@PathVariable Long restaurantId) {
-        List<MenuItem> items = menuItemService.getAvailableMenuItems(restaurantId);
+    public ResponseEntity<List<MenuItemDto>> getMenuItems(@PathVariable Long restaurantId) {
+        List<MenuItemDto> items = menuItemService.getAvailableMenuItems(restaurantId);
         return ResponseEntity.ok(items);
     }
     
     @GetMapping("/restaurant/{restaurantId}/all")
-    public ResponseEntity<List<MenuItem>> getAllMenuItems(@PathVariable Long restaurantId) {
-        List<MenuItem> items = menuItemService.getAllMenuItems(restaurantId);
+    public ResponseEntity<List<MenuItemDto>> getAllMenuItems(@PathVariable Long restaurantId) {
+        List<MenuItemDto> items = menuItemService.getAllMenuItems(restaurantId);
         return ResponseEntity.ok(items);
-    }
-    
-    @PutMapping("/{itemId}/owner/{ownerId}")
-    public ResponseEntity<MenuItem> updateMenuItem(
-            @PathVariable Long itemId,
-            @PathVariable Long ownerId,
-            @RequestParam("name") String name,
-            @RequestParam("description") String description,
-            @RequestParam("price") Double price,
-            @RequestParam("type") String type,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
-        MenuItem menuItem = new MenuItem();
-        menuItem.setName(name);
-        menuItem.setDescription(description);
-        menuItem.setPrice(price);
-        menuItem.setType(type);
-        
-        MenuItem updatedItem = menuItemService.updateMenuItem(itemId, menuItem, ownerId, image);
-        return ResponseEntity.ok(updatedItem);
-    }
-    
-    @DeleteMapping("/{itemId}/owner/{ownerId}")
-    public ResponseEntity<Void> deleteMenuItem(
-            @PathVariable Long itemId,
-            @PathVariable Long ownerId) {
-        menuItemService.deleteMenuItem(itemId, ownerId);
-        return ResponseEntity.noContent().build();
     }
     
     @GetMapping("/image/{itemId}")
@@ -121,12 +94,6 @@ public class MenuItemController {
             @RequestParam String comment) {
         Review review = menuItemService.addReview(orderId, userId, rating, comment);
         return new ResponseEntity<>(review, HttpStatus.CREATED);
-    }
-    
-    @GetMapping("/reviews/{orderId}")
-    public ResponseEntity<List<Review>> getOrderReviews(@PathVariable Long orderId) {
-        List<Review> reviews = menuItemService.getOrderReviews(orderId);
-        return ResponseEntity.ok(reviews);
     }
     
     @GetMapping("/reviews/restaurant/{restaurantId}")
