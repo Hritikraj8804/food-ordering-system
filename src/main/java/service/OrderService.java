@@ -75,7 +75,7 @@ public class OrderService {
  }
 
  /**
-  * Updates order status. Requires HOTEL ownership check.
+  * Updates order status with role-based authorization.
   */
  public Order updateOrderStatus(Long orderId, OrderStatus newStatus, Long updaterId) {
      Order order = orderRepository.findById(orderId)
@@ -83,9 +83,42 @@ public class OrderService {
      
      User updater = userService.getUserById(updaterId);
 
-     // Role Check: Must be a HOTEL AND must own the restaurant associated with the order
-     if (updater.getRole() != Role.HOTEL || !order.getRestaurant().getHotelOwner().getId().equals(updaterId)) {
-         throw new UnauthorizedActionException("You are not authorized to update this order.");
+     // Authorization based on status and role
+     if (newStatus == OrderStatus.DELIVERED) {
+         // Debug logging
+         System.out.println("Attempting to mark order as delivered:");
+         System.out.println("Order ID: " + orderId);
+         System.out.println("Order User ID: " + order.getUser().getId());
+         System.out.println("Updater ID: " + updaterId);
+         System.out.println("Updater Role: " + updater.getRole());
+         System.out.println("Current Order Status: " + order.getStatus());
+         
+         // Only the customer who placed the order can mark it as delivered
+         if (updater.getRole() != Role.USER || !order.getUser().getId().equals(updaterId)) {
+             throw new UnauthorizedActionException("Only the customer can mark the order as delivered.");
+         }
+         // Order must be OUT_FOR_DELIVERY to be marked as delivered
+         if (order.getStatus() != OrderStatus.OUT_FOR_DELIVERY) {
+             throw new UnauthorizedActionException("Order can only be marked as delivered when it's out for delivery.");
+         }
+     } else if (newStatus == OrderStatus.CANCELLED) {
+         // Both customer and restaurant owner can cancel
+         boolean isCustomer = updater.getRole() == Role.USER && order.getUser().getId().equals(updaterId);
+         boolean isRestaurantOwner = updater.getRole() == Role.HOTEL && order.getRestaurant().getHotelOwner().getId().equals(updaterId);
+         
+         if (!isCustomer && !isRestaurantOwner) {
+             throw new UnauthorizedActionException("You are not authorized to cancel this order.");
+         }
+         
+         // Customer can only cancel if order is still PLACED
+         if (isCustomer && order.getStatus() != OrderStatus.PLACED) {
+             throw new UnauthorizedActionException("Order cannot be cancelled after preparation has started.");
+         }
+     } else {
+         // PREPARING and OUT_FOR_DELIVERY can only be set by restaurant owner
+         if (updater.getRole() != Role.HOTEL || !order.getRestaurant().getHotelOwner().getId().equals(updaterId)) {
+             throw new UnauthorizedActionException("Only the restaurant owner can update order preparation status.");
+         }
      }
 
      order.setStatus(newStatus);

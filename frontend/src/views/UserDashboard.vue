@@ -62,17 +62,56 @@
     </div>
     
     <!-- Order History -->
-    <div class="card">
-      <h3>Your Orders</h3>
-      <div v-for="order in orders" :key="order.id" class="order-card">
-        <div class="order-header">
-          <h4>Order #{{ order.id }} - {{ order.status }}</h4>
-          <p class="order-total">Total: ${{ order.totalAmount }}</p>
-        </div>
-        <div class="order-items">
-          <div v-for="item in order.items" :key="item.id" class="order-item">
-            {{ item.menuItem?.name || 'Item' }} x{{ item.quantity }} - ${{ item.priceAtOrder }}
+    <div class="section">
+      <h2><i class="fas fa-history"></i> Your Orders</h2>
+      <div class="orders-list">
+        <div v-for="order in orders" :key="order.id" class="order-card">
+          <div class="order-header">
+            <span class="order-id">Order #{{ order.id }}</span>
+            <span :class="['status-badge', order.status.toLowerCase()]">{{ getStatusText(order.status) }}</span>
           </div>
+          <div class="order-total">₹{{ order.totalAmount }}</div>
+          <div class="order-items-list">
+            <div v-for="item in order.items" :key="item.id" class="order-item-detail">
+              {{ item.itemName || item.menuItem?.name || 'Item' }} × {{ item.quantity }} - ₹{{ item.price || item.priceAtOrder }}
+            </div>
+          </div>
+          <div class="order-actions">
+            <button v-if="order.status === 'PLACED'" class="cancel-btn" @click="cancelOrder(order.id)">
+              <i class="fas fa-times"></i>
+              Cancel Order
+            </button>
+            <button v-if="order.status === 'OUT_FOR_DELIVERY'" class="delivered-btn" @click="markAsDelivered(order.id)">
+              <i class="fas fa-check"></i>
+              Order Received
+            </button>
+            <div v-if="order.status === 'PREPARING'" class="status-info">
+              <i class="fas fa-clock"></i>
+              Your order is being prepared...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Review Modal -->
+    <div v-if="showReviewModal" class="modal-overlay" @click="closeReviewModal">
+      <div class="review-modal" @click.stop>
+        <h3><i class="fas fa-star"></i> Rate Your Order</h3>
+        <div class="stars">
+          <i v-for="n in 5" :key="n" 
+             :class="['fas fa-star', { active: n <= rating }]" 
+             @click="rating = n"></i>
+        </div>
+        <textarea v-model="review" placeholder="Write your review..."></textarea>
+        <div class="modal-actions">
+          <button class="btn btn-primary" @click="submitReview">
+            <i class="fas fa-paper-plane"></i>
+            Submit Review
+          </button>
+          <button class="btn btn-secondary" @click="closeReviewModal">
+            Skip
+          </button>
         </div>
       </div>
     </div>
@@ -94,6 +133,10 @@ export default {
       menuItems: [],
       cart: [],
       orders: [],
+      showReviewModal: false,
+      currentOrderId: null,
+      rating: 0,
+      review: '',
       error: '',
       success: ''
     }
@@ -196,13 +239,72 @@ export default {
     
     async loadOrders() {
       try {
+        console.log('Loading orders for user ID:', this.id)
         const response = await axios.get(`/api/orders/user/${this.id}`)
         this.orders = response.data
         console.log('Loaded orders:', this.orders)
       } catch (error) {
-        console.error('Order loading error:', error)
-        this.error = `Failed to load orders: ${error.response?.data?.message || error.message}`
+        this.error = 'Failed to load orders'
       }
+    },
+    
+    getStatusText(status) {
+      const statusMap = {
+        'PLACED': 'Order Placed',
+        'PREPARING': 'Preparing',
+        'OUT_FOR_DELIVERY': 'Out for Delivery',
+        'DELIVERED': 'Delivered',
+        'CANCELLED': 'Cancelled'
+      }
+      return statusMap[status] || status
+    },
+    
+    async cancelOrder(orderId) {
+      try {
+        const userId = parseInt(this.id)
+        console.log('Cancelling order:', { orderId, userId })
+        await axios.put(`/api/orders/${orderId}/status?status=CANCELLED&updaterId=${userId}`)
+        this.success = 'Order cancelled successfully'
+        await this.loadOrders()
+      } catch (error) {
+        console.error('Error cancelling order:', error.response?.data)
+        this.error = error.response?.data?.message || 'Failed to cancel order'
+      }
+    },
+    
+    async markAsDelivered(orderId) {
+      try {
+        const userId = parseInt(this.id)
+        console.log('Marking order as delivered:', { orderId, userId })
+        await axios.put(`/api/orders/${orderId}/status?status=DELIVERED&updaterId=${userId}`)
+        this.currentOrderId = orderId
+        this.showReviewModal = true
+        await this.loadOrders()
+      } catch (error) {
+        console.error('Error marking as delivered:', error.response?.data)
+        this.error = error.response?.data?.message || 'Failed to mark as delivered'
+      }
+    },
+    
+    async submitReview() {
+      try {
+        // In a real app, you'd send this to a reviews endpoint
+        // await axios.post(`/api/orders/${this.currentOrderId}/review`, {
+        //   rating: this.rating,
+        //   review: this.review
+        // })
+        this.success = 'Thank you for your review!'
+        this.closeReviewModal()
+      } catch (error) {
+        this.error = 'Failed to submit review'
+      }
+    },
+    
+    closeReviewModal() {
+      this.showReviewModal = false
+      this.currentOrderId = null
+      this.rating = 0
+      this.review = ''
     }
   }
 }
@@ -455,5 +557,188 @@ export default {
   text-align: center;
   color: #333;
   font-size: 16px;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-id {
+  font-weight: 600;
+  color: #333;
+  font-size: 18px;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.placed {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-badge.preparing {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status-badge.out_for_delivery {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.status-badge.delivered {
+  background: #e8f5e8;
+  color: #388e3c;
+}
+
+.status-badge.cancelled {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.order-items-list {
+  margin: 12px 0;
+}
+
+.order-item-detail {
+  padding: 4px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.order-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.delivered-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cancel-btn:hover, .delivered-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.review-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.review-modal h3 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.stars i {
+  font-size: 24px;
+  color: #ddd;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.stars i.active {
+  color: #ffc107;
+}
+
+.review-modal textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  resize: vertical;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #f57c00;
+  border-radius: 8px;
+  font-weight: 500;
+  border: 2px solid #ffb74d;
 }
 </style>
