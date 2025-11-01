@@ -3,6 +3,22 @@
     <div class="dashboard-header">
       <h1><i class="fas fa-store"></i> Restaurant Owner Dashboard</h1>
       <p>Manage your restaurants and orders</p>
+      
+      <!-- Navigation Tabs -->
+      <div class="nav-tabs">
+        <router-link :to="`/hotel/${id}`" class="nav-tab" active-class="active">
+          <i class="fas fa-tachometer-alt"></i>
+          Dashboard
+        </router-link>
+        <router-link :to="`/hotel/${id}/orders`" class="nav-tab" active-class="active">
+          <i class="fas fa-history"></i>
+          Orders
+        </router-link>
+        <router-link :to="`/hotel/${id}/reviews`" class="nav-tab" active-class="active">
+          <i class="fas fa-star"></i>
+          Reviews
+        </router-link>
+      </div>
     </div>
     
     <!-- Create Restaurant (only if no restaurants) -->
@@ -81,12 +97,17 @@
     
     <!-- Incoming Orders -->
     <div class="card">
-      <h3>Incoming Orders</h3>
+      <h3>Active Orders</h3>
+      <div v-if="orders.length === 0" class="no-orders">
+        <i class="fas fa-clipboard-list"></i>
+        <h4>No Active Orders</h4>
+        <p>New orders will appear here when customers place them</p>
+      </div>
       <div v-for="order in orders" :key="order.id" class="order-card">
         <div class="order-header">
           <div class="order-info">
             <h4>Order #{{ order.id }}</h4>
-            <span :class="['status-badge', order.status.toLowerCase()]">{{ getStatusText(order.status) }}</span>
+            <span class="order-date">{{ formatDate(order.createdAt) }}</span>
           </div>
           <div class="order-details">
             <p><i class="fas fa-user"></i> <strong>Customer:</strong> {{ order.user?.name || 'Unknown' }}</p>
@@ -94,10 +115,79 @@
           </div>
         </div>
         
-        <div class="order-items">
-          <h5><i class="fas fa-list"></i> Items:</h5>
-          <div v-for="item in order.items" :key="item.id" class="order-item">
-            {{ item.itemName || item.menuItem?.name || 'Item' }} × {{ item.quantity }} - ₹{{ item.price || item.priceAtOrder }}
+        <!-- Order Status Pipeline -->
+        <div class="status-pipeline">
+          <div v-if="order.status === 'CANCELLED'" class="cancelled-status">
+            <div class="step-icon cancelled">
+              <i class="fas fa-times"></i>
+            </div>
+            <span>Order Cancelled</span>
+          </div>
+          <template v-else>
+            <div class="pipeline-step" :class="['placed', { active: isStepActive('PLACED', order.status), completed: isStepCompleted('PLACED', order.status) }]">
+              <div class="step-icon"><i class="fas fa-receipt"></i></div>
+              <span>Placed</span>
+            </div>
+            <div class="pipeline-line" :class="{ active: isStepCompleted('PLACED', order.status) }"></div>
+            <div class="pipeline-step" :class="['preparing', { active: isStepActive('PREPARING', order.status), completed: isStepCompleted('PREPARING', order.status) }]">
+              <div class="step-icon"><i class="fas fa-utensils"></i></div>
+              <span>Preparing</span>
+            </div>
+            <div class="pipeline-line" :class="{ active: isStepCompleted('PREPARING', order.status) }"></div>
+            <div class="pipeline-step" :class="['delivery', { active: isStepActive('OUT_FOR_DELIVERY', order.status), completed: isStepCompleted('OUT_FOR_DELIVERY', order.status) }]">
+              <div class="step-icon"><i class="fas fa-truck"></i></div>
+              <span>Delivery</span>
+            </div>
+            <div class="pipeline-line" :class="{ active: isStepCompleted('OUT_FOR_DELIVERY', order.status) }"></div>
+            <div class="pipeline-step" :class="['delivered', { active: isStepActive('DELIVERED', order.status), completed: isStepCompleted('DELIVERED', order.status) }]">
+              <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+              <span>Delivered</span>
+            </div>
+          </template>
+        </div>
+        
+        <!-- Business Bill Details -->
+        <div class="business-bill">
+          <div class="bill-header">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>Order Invoice</span>
+            <span class="invoice-number">#INV-{{ order.id }}</span>
+          </div>
+          
+          <div class="bill-details">
+            <div class="customer-details">
+              <h6><i class="fas fa-user"></i> Customer Information</h6>
+              <p><strong>Name:</strong> {{ order.user?.name || 'Unknown' }}</p>
+              <p><strong>Order Date:</strong> {{ formatDate(order.createdAt) }}</p>
+            </div>
+            
+            <div class="order-items-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in order.items" :key="item.id">
+                    <td class="item-name">{{ item.itemName || item.menuItem?.name || 'Item' }}</td>
+                    <td class="item-qty">×{{ item.quantity }}</td>
+                    <td class="item-rate">₹{{ item.price || item.priceAtOrder }}</td>
+                    <td class="item-total">₹{{ (item.price || item.priceAtOrder) * item.quantity }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="bill-summary">
+              <div class="summary-row total">
+                <span>Total Amount:</span>
+                <span>₹{{ order.totalAmount }}</span>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -116,11 +206,7 @@
           </button>
           <div v-if="order.status === 'OUT_FOR_DELIVERY'" class="status-info">
             <i class="fas fa-truck"></i>
-            Waiting for customer to confirm delivery...
-          </div>
-          <div v-if="order.status === 'DELIVERED'" class="status-success">
-            <i class="fas fa-check-circle"></i>
-            Order completed successfully!
+            Waiting for customer confirmation
           </div>
         </div>
       </div>
@@ -234,11 +320,38 @@ export default {
         this.orders = []
         for (const restaurant of this.myRestaurants) {
           const response = await axios.get(`/api/orders/restaurant/${restaurant.id}`)
-          this.orders.push(...response.data)
+          // Filter only incoming orders (not delivered or cancelled)
+          const incomingOrders = response.data.filter(order => 
+            order.status !== 'DELIVERED' && order.status !== 'CANCELLED'
+          )
+          this.orders.push(...incomingOrders)
         }
+        // Sort by date, newest first
+        this.orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       } catch (error) {
         this.error = 'Failed to load orders'
       }
+    },
+    
+    formatDate(dateString) {
+      if (!dateString) return 'N/A'
+      return new Date(dateString).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    
+    isStepActive(step, currentStatus) {
+      return step === currentStatus
+    },
+    
+    isStepCompleted(step, currentStatus) {
+      const steps = ['PLACED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED']
+      const stepIndex = steps.indexOf(step)
+      const currentIndex = steps.indexOf(currentStatus)
+      return currentIndex > stepIndex
     },
     
     getStatusText(status) {
@@ -569,6 +682,350 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+.nav-tab {
+  padding: 12px 24px;
+  background: rgba(255,255,255,0.1);
+  color: #666;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid transparent;
+}
+
+.nav-tab:hover {
+  background: rgba(255,255,255,0.2);
+  color: #333;
+}
+
+.nav-tab.active {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border-color: #ff6b35;
+}
+
+.order-date {
+  color: #666;
+  font-size: 14px;
+}
+
+.status-pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.4;
+  transition: all 0.3s ease;
+}
+
+.pipeline-step.active {
+  opacity: 1;
+}
+
+.pipeline-step.completed {
+  opacity: 1;
+}
+
+.step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e0e0;
+  transition: all 0.3s ease;
+  color: #666;
+}
+
+/* Placed - Blue */
+.pipeline-step.placed.active {
+  color: #2196F3;
+}
+.pipeline-step.placed.active .step-icon {
+  background: #2196F3;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.placed.completed .step-icon {
+  background: #2196F3;
+  color: white;
+}
+
+/* Preparing - Green */
+.pipeline-step.preparing.active {
+  color: #4CAF50;
+}
+.pipeline-step.preparing.active .step-icon {
+  background: #4CAF50;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.preparing.completed .step-icon {
+  background: #4CAF50;
+  color: white;
+}
+
+/* Delivery - Yellow */
+.pipeline-step.delivery.active {
+  color: #FFC107;
+}
+.pipeline-step.delivery.active .step-icon {
+  background: #FFC107;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.delivery.completed .step-icon {
+  background: #FFC107;
+  color: white;
+}
+
+/* Delivered - Orange */
+.pipeline-step.delivered.active {
+  color: #FF9800;
+}
+.pipeline-step.delivered.active .step-icon {
+  background: #FF9800;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.delivered.completed .step-icon {
+  background: #FF9800;
+  color: white;
+}
+
+/* Cancelled - Red */
+.cancelled-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #f44336;
+  font-weight: 600;
+}
+
+.step-icon.cancelled {
+  background: #f44336;
+  color: white;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.pipeline-line {
+  flex: 1;
+  height: 2px;
+  background: #e0e0e0;
+  margin: 0 16px;
+  transition: all 0.3s ease;
+}
+
+.pipeline-line.active {
+  background: linear-gradient(90deg, #2196F3, #4CAF50);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.business-bill {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-top: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.business-bill .bill-header {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.invoice-number {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.bill-details {
+  padding: 20px;
+}
+
+.customer-details {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.customer-details h6 {
+  margin: 0 0 12px 0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.customer-details p {
+  margin: 4px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.order-items-table {
+  margin-bottom: 20px;
+}
+
+.order-items-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.order-items-table th {
+  background: #f8f9fa;
+  padding: 12px 8px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+  font-size: 14px;
+}
+
+.order-items-table th:first-child {
+  text-align: left;
+}
+
+.order-items-table th:not(:first-child) {
+  text-align: center;
+}
+
+.order-items-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.item-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.item-qty {
+  text-align: center;
+  color: #666;
+}
+
+.item-rate, .item-total {
+  text-align: center;
+  font-weight: 500;
+  color: #333;
+}
+
+.bill-summary {
+  border-top: 2px solid #e0e0e0;
+  padding-top: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.summary-row.total {
+  border-top: 1px solid #e0e0e0;
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.payment-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #e8f5e8;
+  border-radius: 8px;
+  border-left: 4px solid #4CAF50;
+}
+
+.status-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.payment-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.payment-badge.paid {
+  background: #4CAF50;
+  color: white;
+}
+
+.no-orders {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.no-orders i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #ddd;
+}
+
+.no-orders h4 {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.no-orders p {
+  color: #666;
+  font-size: 14px;
 }
 
 .status-info {

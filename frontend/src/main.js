@@ -4,6 +4,9 @@ import App from './App.vue'
 import Login from './views/Login.vue'
 import UserDashboard from './views/UserDashboard.vue'
 import HotelDashboard from './views/HotelDashboard.vue'
+import ReviewsPage from './views/ReviewsPage.vue'
+import OrderHistory from './views/OrderHistory.vue'
+import UserOrderHistory from './views/UserOrderHistory.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -19,6 +22,24 @@ const routes = [
     component: HotelDashboard, 
     props: true,
     meta: { requiresAuth: true, role: 'HOTEL' }
+  },
+  { 
+    path: '/hotel/:id/reviews', 
+    component: ReviewsPage, 
+    props: true,
+    meta: { requiresAuth: true, role: 'HOTEL' }
+  },
+  { 
+    path: '/hotel/:id/orders', 
+    component: OrderHistory, 
+    props: true,
+    meta: { requiresAuth: true, role: 'HOTEL' }
+  },
+  { 
+    path: '/user/:id/orders', 
+    component: UserOrderHistory, 
+    props: true,
+    meta: { requiresAuth: true, role: 'USER' }
   }
 ]
 

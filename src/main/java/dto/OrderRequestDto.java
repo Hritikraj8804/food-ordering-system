@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 public class OrderRequestDto {
     private List<OrderItemDto> items;
+    private String deliveryAddress;
     
     @Data
     public static class OrderItemDto {
@@ -35,5 +36,13 @@ public class OrderRequestDto {
     
     public void setItems(List<OrderItemDto> items) {
         this.items = items;
+    }
+    
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+    
+    public void setDeliveryAddress(String deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
     }
 }

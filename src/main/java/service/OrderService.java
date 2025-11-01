@@ -53,6 +53,7 @@ public class OrderService {
      Order newOrder = new Order();
      newOrder.setUser(customer);
      newOrder.setRestaurant(restaurant);
+     newOrder.setDeliveryAddress(orderRequestDto.getDeliveryAddress());
      
      // Process items from the DTO
      double total = 0.0;
