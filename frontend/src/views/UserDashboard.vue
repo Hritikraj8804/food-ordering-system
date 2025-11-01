@@ -3,6 +3,18 @@
     <div class="dashboard-header">
       <h1><i class="fas fa-user"></i> Customer Dashboard</h1>
       <p>Discover and order from amazing restaurants</p>
+      
+      <!-- Navigation Tabs -->
+      <div class="nav-tabs">
+        <router-link :to="`/user/${id}`" class="nav-tab" active-class="active">
+          <i class="fas fa-home"></i>
+          Dashboard
+        </router-link>
+        <router-link :to="`/user/${id}/orders`" class="nav-tab" active-class="active">
+          <i class="fas fa-history"></i>
+          My Orders
+        </router-link>
+      </div>
     </div>
     
     <!-- Restaurant List -->
@@ -57,25 +69,112 @@
         <div class="cart-total">
           <strong>Total: ${{ cartTotal.toFixed(2) }}</strong>
         </div>
-        <button class="btn btn-primary" @click="placeOrder">Place Order</button>
+        
+        <!-- Delivery Address -->
+        <div class="address-section">
+          <label for="deliveryAddress">Delivery Address:</label>
+          <textarea 
+            id="deliveryAddress"
+            v-model="deliveryAddress" 
+            placeholder="Enter your complete delivery address..."
+            required
+          ></textarea>
+        </div>
+        
+        <button class="btn btn-primary" @click="placeOrder" :disabled="!deliveryAddress.trim()">
+          Place Order
+        </button>
       </div>
     </div>
     
-    <!-- Order History -->
-    <div class="section">
-      <h2><i class="fas fa-history"></i> Your Orders</h2>
+    <!-- Active Orders -->
+    <div class="card">
+      <h3>Active Orders</h3>
+      <div v-if="currentOrders.length === 0" class="no-orders">
+        <i class="fas fa-shopping-cart"></i>
+        <h4>No Active Orders</h4>
+        <p>Your active orders will appear here</p>
+      </div>
       <div class="orders-list">
-        <div v-for="order in orders" :key="order.id" class="order-card">
+        <div v-for="order in currentOrders" :key="order.id" class="order-card">
           <div class="order-header">
-            <span class="order-id">Order #{{ order.id }}</span>
-            <span :class="['status-badge', order.status.toLowerCase()]">{{ getStatusText(order.status) }}</span>
-          </div>
-          <div class="order-total">₹{{ order.totalAmount }}</div>
-          <div class="order-items-list">
-            <div v-for="item in order.items" :key="item.id" class="order-item-detail">
-              {{ item.itemName || item.menuItem?.name || 'Item' }} × {{ item.quantity }} - ₹{{ item.price || item.priceAtOrder }}
+            <div class="order-info">
+              <h4>Order #{{ order.id }}</h4>
+              <span class="order-date">{{ formatDate(order.createdAt) }}</span>
+            </div>
+            <div class="order-details">
+              <div class="restaurant-info">
+                <p><i class="fas fa-store"></i> {{ order.restaurant?.name || 'Unknown' }}</p>
+                <span :class="['status-badge', order.status.toLowerCase()]">{{ getStatusText(order.status) }}</span>
+              </div>
+              <div class="order-total">₹{{ order.totalAmount }}</div>
             </div>
           </div>
+          
+          <!-- Order Status Pipeline -->
+          <div class="status-pipeline">
+            <div class="pipeline-step" :class="['placed', { active: isStepActive('PLACED', order.status), completed: isStepCompleted('PLACED', order.status) }]">
+              <div class="step-icon"><i class="fas fa-receipt"></i></div>
+              <span>Placed</span>
+            </div>
+            <div class="pipeline-line" :class="{ active: isStepCompleted('PLACED', order.status) }"></div>
+            <div class="pipeline-step" :class="['preparing', { active: isStepActive('PREPARING', order.status), completed: isStepCompleted('PREPARING', order.status) }]">
+              <div class="step-icon"><i class="fas fa-utensils"></i></div>
+              <span>Preparing</span>
+            </div>
+            <div class="pipeline-line" :class="{ active: isStepCompleted('PREPARING', order.status) }"></div>
+            <div class="pipeline-step" :class="['delivery', { active: isStepActive('OUT_FOR_DELIVERY', order.status), completed: isStepCompleted('OUT_FOR_DELIVERY', order.status) }]">
+              <div class="step-icon"><i class="fas fa-truck"></i></div>
+              <span>Delivery</span>
+            </div>
+          </div>
+          
+          <!-- Business Bill Details -->
+          <div class="business-bill">
+            <div class="bill-header">
+              <i class="fas fa-file-invoice-dollar"></i>
+              <span>Order Invoice</span>
+              <span class="invoice-number">#INV-{{ order.id }}</span>
+            </div>
+            
+            <div class="bill-details">
+              <div class="customer-details">
+                <h6><i class="fas fa-map-marker-alt"></i> Delivery Information</h6>
+                <p><strong>Restaurant:</strong> {{ order.restaurant?.name || 'Unknown' }}</p>
+                <p><strong>Order Date:</strong> {{ formatDate(order.createdAt) }}</p>
+                <p v-if="order.deliveryAddress"><strong>Address:</strong> {{ order.deliveryAddress }}</p>
+              </div>
+              
+              <div class="order-items-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Qty</th>
+                      <th>Rate</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in order.items" :key="item.id">
+                      <td class="item-name">{{ item.itemName || item.menuItem?.name || 'Item' }}</td>
+                      <td class="item-qty">×{{ item.quantity }}</td>
+                      <td class="item-rate">₹{{ item.price || item.priceAtOrder }}</td>
+                      <td class="item-total">₹{{ (item.price || item.priceAtOrder) * item.quantity }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <div class="bill-summary">
+                <div class="summary-row total">
+                  <span>Total Amount:</span>
+                  <span>₹{{ order.totalAmount }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <div class="order-actions">
             <button v-if="order.status === 'PLACED'" class="cancel-btn" @click="cancelOrder(order.id)">
               <i class="fas fa-times"></i>
@@ -84,6 +183,10 @@
             <button v-if="order.status === 'OUT_FOR_DELIVERY'" class="delivered-btn" @click="markAsDelivered(order.id)">
               <i class="fas fa-check"></i>
               Order Received
+            </button>
+            <button v-if="order.status === 'DELIVERED'" class="invoice-btn" @click="generateInvoice(order)">
+              <i class="fas fa-file-pdf"></i>
+              Download Invoice
             </button>
             <div v-if="order.status === 'PREPARING'" class="status-info">
               <i class="fas fa-clock"></i>
@@ -133,6 +236,7 @@ export default {
       menuItems: [],
       cart: [],
       orders: [],
+      deliveryAddress: '',
       showReviewModal: false,
       currentOrderId: null,
       rating: 0,
@@ -144,6 +248,11 @@ export default {
   computed: {
     cartTotal() {
       return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0)
+    },
+    currentOrders() {
+      return this.orders.filter(order => 
+        order.status !== 'DELIVERED' && order.status !== 'CANCELLED'
+      )
     }
   },
   async mounted() {
@@ -217,17 +326,24 @@ export default {
           return
         }
         
+        if (!this.deliveryAddress.trim()) {
+          this.error = 'Please enter delivery address'
+          return
+        }
+        
         const orderData = {
           items: this.cart.map(item => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity
-          }))
+          })),
+          deliveryAddress: this.deliveryAddress.trim()
         }
         
         await axios.post(`/api/orders/${this.id}/${this.selectedRestaurant.id}`, orderData)
         
         this.success = `Order placed successfully! Total: $${this.cartTotal.toFixed(2)}`
         this.cart = []
+        this.deliveryAddress = ''
         this.selectedRestaurant = null
         this.menuItems = []
         await this.loadOrders()
@@ -305,6 +421,55 @@ export default {
       this.currentOrderId = null
       this.rating = 0
       this.review = ''
+    },
+    
+    generateInvoice(order) {
+      // Simple invoice generation - in real app would be more sophisticated
+      const invoiceContent = `
+INVOICE
+=======
+Order #${order.id}
+Date: ${this.formatDate(order.createdAt)}
+Restaurant: ${order.restaurant?.name || 'Unknown'}
+
+ITEMS:
+${order.items.map(item => 
+  `${item.itemName || item.menuItem?.name} x${item.quantity} - ₹${(item.price || item.priceAtOrder) * item.quantity}`
+).join('\n')}
+
+TOTAL: ₹${order.totalAmount}
+
+Thank you for your order!
+      `
+      
+      const blob = new Blob([invoiceContent], { type: 'text/plain' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `invoice-${order.id}.txt`
+      a.click()
+      window.URL.revokeObjectURL(url)
+    },
+    
+    formatDate(dateString) {
+      if (!dateString) return 'N/A'
+      return new Date(dateString).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    
+    isStepActive(step, currentStatus) {
+      return step === currentStatus
+    },
+    
+    isStepCompleted(step, currentStatus) {
+      const steps = ['PLACED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED']
+      const stepIndex = steps.indexOf(step)
+      const currentIndex = steps.indexOf(currentStatus)
+      return currentIndex > stepIndex
     }
   }
 }
@@ -740,5 +905,576 @@ export default {
   border-radius: 8px;
   font-weight: 500;
   border: 2px solid #ffb74d;
+}
+
+.order-date {
+  color: #666;
+  font-size: 14px;
+}
+
+.status-pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.4;
+  transition: all 0.3s ease;
+}
+
+.pipeline-step.active {
+  opacity: 1;
+}
+
+.pipeline-step.completed {
+  opacity: 1;
+}
+
+.step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e0e0;
+  transition: all 0.3s ease;
+  color: #666;
+}
+
+/* Placed - Blue */
+.pipeline-step.placed.active {
+  color: #2196F3;
+}
+.pipeline-step.placed.active .step-icon {
+  background: #2196F3;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.placed.completed .step-icon {
+  background: #2196F3;
+  color: white;
+}
+
+/* Preparing - Green */
+.pipeline-step.preparing.active {
+  color: #4CAF50;
+}
+.pipeline-step.preparing.active .step-icon {
+  background: #4CAF50;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.preparing.completed .step-icon {
+  background: #4CAF50;
+  color: white;
+}
+
+/* Delivery - Yellow */
+.pipeline-step.delivery.active {
+  color: #FFC107;
+}
+.pipeline-step.delivery.active .step-icon {
+  background: #FFC107;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.delivery.completed .step-icon {
+  background: #FFC107;
+  color: white;
+}
+
+/* Delivered - Orange */
+.pipeline-step.delivered.active {
+  color: #FF9800;
+}
+.pipeline-step.delivered.active .step-icon {
+  background: #FF9800;
+  color: white;
+  animation: pulse 2s infinite;
+}
+.pipeline-step.delivered.completed .step-icon {
+  background: #FF9800;
+  color: white;
+}
+
+/* Cancelled - Red */
+.cancelled-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #f44336;
+  font-weight: 600;
+}
+
+.step-icon.cancelled {
+  background: #f44336;
+  color: white;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.pipeline-line {
+  flex: 1;
+  height: 2px;
+  background: #e0e0e0;
+  margin: 0 16px;
+  transition: all 0.3s ease;
+}
+
+.pipeline-line.active {
+  background: linear-gradient(90deg, #2196F3, #4CAF50);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.bill-container {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.bill-header {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  padding: 12px 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bill-items {
+  padding: 16px;
+}
+
+.bill-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.bill-item:last-child {
+  border-bottom: none;
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.item-qty {
+  color: #666;
+  font-size: 14px;
+}
+
+.item-price {
+  font-weight: 600;
+  color: #ff6b35;
+}
+
+.bill-total {
+  background: #f8f9fa;
+  padding: 16px;
+  border-top: 2px solid #ff6b35;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.total-amount {
+  color: #ff6b35;
+  font-size: 20px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+.nav-tab {
+  padding: 12px 24px;
+  background: rgba(255,255,255,0.1);
+  color: #666;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid transparent;
+}
+
+.nav-tab:hover {
+  background: rgba(255,255,255,0.2);
+  color: #333;
+}
+
+.nav-tab.active {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border-color: #ff6b35;
+}
+
+.no-orders {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.no-orders i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #ddd;
+}
+
+.no-orders h4 {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.no-orders p {
+  color: #666;
+  font-size: 14px;
+}
+
+.order-count {
+  background: #ff6b35;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 4px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.business-bill {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-top: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.business-bill .bill-header {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.order-items-table {
+  margin: 0;
+}
+
+.order-items-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.order-items-table th {
+  background: #f8f9fa;
+  padding: 12px 8px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+  font-size: 14px;
+}
+
+.order-items-table th:first-child {
+  text-align: left;
+}
+
+.order-items-table th:not(:first-child) {
+  text-align: center;
+}
+
+.order-items-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.item-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.item-qty {
+  text-align: center;
+  color: #666;
+}
+
+.item-rate, .item-total {
+  text-align: center;
+  font-weight: 500;
+  color: #333;
+}
+
+.bill-summary {
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-top: 2px solid #2196F3;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.order-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.order-info h4 {
+  margin: 0;
+  color: #333;
+}
+
+.order-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-details p {
+  margin: 4px 0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.restaurant-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.restaurant-info p {
+  margin: 0;
+  color: #333;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-total {
+  color: #ff6b35;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.business-bill {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-top: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.business-bill .bill-header {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.invoice-number {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.bill-details {
+  padding: 20px;
+}
+
+.customer-details {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.customer-details h6 {
+  margin: 0 0 12px 0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.customer-details p {
+  margin: 4px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.order-items-table {
+  margin-bottom: 20px;
+}
+
+.order-items-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.order-items-table th {
+  background: #f8f9fa;
+  padding: 12px 8px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+  font-size: 14px;
+}
+
+.order-items-table th:first-child {
+  text-align: left;
+}
+
+.order-items-table th:not(:first-child) {
+  text-align: center;
+}
+
+.order-items-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.bill-summary {
+  border-top: 2px solid #e0e0e0;
+  padding-top: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.summary-row.total {
+  border-top: 1px solid #e0e0e0;
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.invoice-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.invoice-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.address-section {
+  margin: 20px 0;
+}
+
+.address-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.address-section textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+.address-section textarea:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 </style>
