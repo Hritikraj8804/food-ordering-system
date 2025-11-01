@@ -1,12 +1,14 @@
 package service;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 import entity.Role;
 import entity.User;
 import exception.ResourceNotFoundException;
 import repository.UserRepository;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -32,6 +34,10 @@ public class UserService {
      // Security Note: Here is where a PasswordEncoder would hash the password!
      
      return userRepository.save(user);
+ }
+
+ public List<User> getAllUsers() {
+     return userRepository.findAll();
  }
 
  public User getUserById(Long id) {

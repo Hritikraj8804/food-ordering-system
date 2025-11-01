@@ -2,6 +2,8 @@ package controller;
 
 
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +41,16 @@ public class UserController {
         
         // Return 201 Created status
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
+    }
+
+    /**
+     * GET /api/users
+     * Retrieves all users. Used for login functionality.
+     */
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 
     /**
