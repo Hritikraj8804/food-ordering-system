@@ -84,30 +84,44 @@
       <h3>Incoming Orders</h3>
       <div v-for="order in orders" :key="order.id" class="order-card">
         <div class="order-header">
-          <h4>Order #{{ order.id }} - {{ order.status }}</h4>
-          <p><strong>Customer:</strong> {{ order.user?.name || 'Unknown' }}</p>
-          <p><strong>Total:</strong> ${{ order.totalAmount }}</p>
+          <div class="order-info">
+            <h4>Order #{{ order.id }}</h4>
+            <span :class="['status-badge', order.status.toLowerCase()]">{{ getStatusText(order.status) }}</span>
+          </div>
+          <div class="order-details">
+            <p><i class="fas fa-user"></i> <strong>Customer:</strong> {{ order.user?.name || 'Unknown' }}</p>
+            <p class="order-total"><i class="fas fa-rupee-sign"></i> ₹{{ order.totalAmount }}</p>
+          </div>
         </div>
         
         <div class="order-items">
+          <h5><i class="fas fa-list"></i> Items:</h5>
           <div v-for="item in order.items" :key="item.id" class="order-item">
-            {{ item.menuItem?.name || 'Item' }} x{{ item.quantity }} - ${{ item.priceAtOrder }}
+            {{ item.itemName || item.menuItem?.name || 'Item' }} × {{ item.quantity }} - ₹{{ item.price || item.priceAtOrder }}
           </div>
         </div>
         
         <div class="order-actions">
-          <button class="btn btn-primary" @click="updateOrderStatus(order.id, 'PREPARING')">
-            Mark as Preparing
+          <button v-if="order.status === 'PLACED'" class="btn btn-primary" @click="updateOrderStatus(order.id, 'PREPARING')">
+            <i class="fas fa-clock"></i>
+            Start Preparing
           </button>
-          <button class="btn btn-primary" @click="updateOrderStatus(order.id, 'OUT_FOR_DELIVERY')">
-            Out for Delivery
+          <button v-if="order.status === 'PREPARING'" class="btn btn-primary" @click="updateOrderStatus(order.id, 'OUT_FOR_DELIVERY')">
+            <i class="fas fa-truck"></i>
+            Ready for Delivery
           </button>
-          <button class="btn btn-success" @click="updateOrderStatus(order.id, 'DELIVERED')">
-            Mark as Delivered
-          </button>
-          <button class="btn btn-danger" @click="updateOrderStatus(order.id, 'CANCELLED')">
+          <button v-if="order.status === 'PLACED'" class="btn btn-danger" @click="updateOrderStatus(order.id, 'CANCELLED')">
+            <i class="fas fa-times"></i>
             Cancel Order
           </button>
+          <div v-if="order.status === 'OUT_FOR_DELIVERY'" class="status-info">
+            <i class="fas fa-truck"></i>
+            Waiting for customer to confirm delivery...
+          </div>
+          <div v-if="order.status === 'DELIVERED'" class="status-success">
+            <i class="fas fa-check-circle"></i>
+            Order completed successfully!
+          </div>
         </div>
       </div>
     </div>
@@ -227,17 +241,31 @@ export default {
       }
     },
     
+    getStatusText(status) {
+      const statusMap = {
+        'PLACED': 'Order Placed',
+        'PREPARING': 'Preparing',
+        'OUT_FOR_DELIVERY': 'Out for Delivery',
+        'DELIVERED': 'Delivered',
+        'CANCELLED': 'Cancelled'
+      }
+      return statusMap[status] || status
+    },
+    
     async updateOrderStatus(orderId, status) {
       try {
         this.error = ''
         this.success = ''
         
-        await axios.put(`/api/orders/${orderId}/status?status=${status}&updaterId=${this.id}`)
+        const userId = parseInt(this.id)
+        console.log('Updating order status:', { orderId, status, userId })
+        await axios.put(`/api/orders/${orderId}/status?status=${status}&updaterId=${userId}`)
         
-        this.success = `Order status updated to ${status}`
+        this.success = `Order status updated to ${this.getStatusText(status)}`
         await this.loadOrders()
         
       } catch (error) {
+        console.error('Error updating order status:', error.response?.data)
         this.error = error.response?.data?.message || 'Failed to update order status'
       }
     }
@@ -474,5 +502,98 @@ export default {
 .order-actions button:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.order-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.order-info h4 {
+  margin: 0;
+  color: #333;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.placed {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-badge.preparing {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status-badge.out_for_delivery {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.status-badge.delivered {
+  background: #e8f5e8;
+  color: #388e3c;
+}
+
+.status-badge.cancelled {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.order-details p {
+  margin: 4px 0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-details .order-total {
+  color: #ff6b35;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.order-items h5 {
+  color: #333;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  color: #7b1fa2;
+  border-radius: 8px;
+  font-weight: 500;
+  border: 2px solid #ba68c8;
+  margin-top: 12px;
+}
+
+.status-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+  color: #388e3c;
+  border-radius: 8px;
+  font-weight: 500;
+  border: 2px solid #81c784;
+  margin-top: 12px;
 }
 </style>
