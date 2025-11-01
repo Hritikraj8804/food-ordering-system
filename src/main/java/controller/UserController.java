@@ -1,7 +1,5 @@
 package controller;
 
-
-
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -14,11 +12,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import entity.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import service.UserService;
 
-@RestController // 1. Defines this class to handle REST requests
-@RequestMapping("/api/users") // Base path for all user operations
+@RestController
+@RequestMapping("/api/users")
+@Tag(name = "User Management", description = "APIs for user registration and authentication")
 public class UserController {
 
     private final UserService userService;
@@ -28,13 +34,20 @@ public class UserController {
         this.userService = userService;
     }
 
-    /**
-     * POST /api/users/register
-     * Handles the creation of a new user. 
-     * The service layer handles default role assignment and email uniqueness check.
-     */
+    @Operation(
+        summary = "Register a new user",
+        description = "Creates a new user account with either USER (customer) or HOTEL (restaurant owner) role"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "User registered successfully",
+            content = @Content(schema = @Schema(implementation = User.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input or email already exists",
+            content = @Content)
+    })
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@Valid @RequestBody User user) {
+    public ResponseEntity<User> registerUser(
+        @Parameter(description = "User registration details", required = true)
+        @Valid @RequestBody User user) {
         
         // @Valid ensures input data conforms to constraints (e.g., @NotNull)
         User registeredUser = userService.registerUser(user);
@@ -43,36 +56,38 @@ public class UserController {
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
-    /**
-     * GET /api/users
-     * Retrieves all users. Used for login functionality.
-     */
+    @Operation(
+        summary = "Get all users",
+        description = "Retrieves a list of all registered users (used for login functionality)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Users retrieved successfully",
+            content = @Content(schema = @Schema(implementation = User.class)))
+    })
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    /**
-     * GET /api/users/{id}
-     * Retrieves a user by their ID. Useful for authentication/verification.
-     */
+    @Operation(
+        summary = "Get user by ID",
+        description = "Retrieves a specific user by their unique identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User found",
+            content = @Content(schema = @Schema(implementation = User.class))),
+        @ApiResponse(responseCode = "404", description = "User not found",
+            content = @Content)
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(
+        @Parameter(description = "User ID", required = true, example = "1")
+        @PathVariable Long id) {
         // The service throws ResourceNotFoundException (handled by GlobalExceptionHandler)
         User user = userService.getUserById(id);
         
         // Return 200 OK status
         return ResponseEntity.ok(user);
-    }
-    
-    /**
-     * GET /api/users
-     * Retrieves all users. Used for login functionality.
-     */
-    @GetMapping
-    public ResponseEntity<java.util.List<User>> getAllUsers() {
-        java.util.List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
     }
 }

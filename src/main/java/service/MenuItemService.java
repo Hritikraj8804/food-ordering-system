@@ -61,7 +61,6 @@ public class MenuItemService {
         menuItem.setRestaurant(restaurant);
         MenuItem savedItem = menuItemRepository.save(menuItem);
         
-        // Save image with item ID as filename
         if (image != null && !image.isEmpty()) {
             saveImage(image, savedItem.getId());
         }
@@ -100,7 +99,6 @@ public class MenuItemService {
             existingItem.setAvailable(updatedItem.getAvailable());
         }
         
-        // Update image if provided
         if (image != null && !image.isEmpty()) {
             saveImage(image, itemId);
         }
@@ -124,8 +122,6 @@ public class MenuItemService {
         }
         
         menuItemRepository.delete(item);
-        
-        // Delete associated image file
         deleteImage(itemId);
     }
     
@@ -173,7 +169,6 @@ public class MenuItemService {
             throw new UnauthorizedActionException("You can only review your own orders");
         }
         
-        // Check if review already exists
         if (reviewRepository.findByOrderIdAndUserId(orderId, userId).isPresent()) {
             throw new UnauthorizedActionException("You have already reviewed this order");
         }
