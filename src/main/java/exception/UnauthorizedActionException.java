@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * was not found in the database.
  * * It automatically maps to an HTTP 404 response thanks to @ResponseStatus.
  */
-@ResponseStatus(HttpStatus.NOT_FOUND) // <--- This annotation ensures a 404 status code
+@ResponseStatus(HttpStatus.FORBIDDEN) // <--- This annotation ensures a 403 status code
 public class UnauthorizedActionException extends RuntimeException {
 
 	
