@@ -32,25 +32,50 @@
       </div>
       
       <!-- Create Restaurant Form -->
-      <div v-if="showCreateForm" class="create-form">
-        <h4>Create New Restaurant</h4>
-        <div class="form-row">
-          <input v-model="newRestaurant.name" placeholder="Restaurant name">
-          <input v-model="newRestaurant.address" placeholder="Address">
-          <select v-model="newRestaurant.cuisineType">
-            <option value="">Select cuisine type</option>
-            <option value="Indian">Indian</option>
-            <option value="Chinese">Chinese</option>
-            <option value="European">European</option>
-            <option value="Other">Other</option>
-          </select>
-          <button class="create-btn" @click="createRestaurant">
-            <i class="fas fa-plus"></i>
-            Create
-          </button>
-          <button class="btn btn-secondary" @click="cancelCreate">
-            Cancel
-          </button>
+      <div v-if="showCreateForm" class="create-restaurant-modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3><i class="fas fa-store"></i> Create New Restaurant</h3>
+            <button class="close-btn" @click="cancelCreate">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="form-container">
+            <div class="form-group">
+              <label><i class="fas fa-utensils"></i> Restaurant Name</label>
+              <input v-model="newRestaurant.name" placeholder="Enter your restaurant name" class="form-input">
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-map-marker-alt"></i> Full Address</label>
+              <textarea v-model="newRestaurant.address" placeholder="Shop No., Building, Area, City, Pincode" rows="3" class="form-textarea"></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label><i class="fas fa-tags"></i> Cuisine Type</label>
+              <div class="cuisine-options">
+                <div v-for="cuisine in cuisineTypes" :key="cuisine.value" 
+                     class="cuisine-option" 
+                     :class="{ selected: newRestaurant.cuisineType === cuisine.value }"
+                     @click="newRestaurant.cuisineType = cuisine.value">
+                  <i :class="cuisine.icon"></i>
+                  <span>{{ cuisine.label }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button class="create-btn" @click="createRestaurant" :disabled="!isFormValid">
+                <i class="fas fa-check"></i>
+                Create Restaurant
+              </button>
+              <button class="cancel-btn" @click="cancelCreate">
+                <i class="fas fa-times"></i>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -295,6 +320,16 @@ export default {
       myRestaurants: [],
       selectedRestaurant: null,
       showCreateForm: false,
+      cuisineTypes: [
+        { value: 'Indian', label: 'Indian', icon: 'fas fa-pepper-hot' },
+        { value: 'Chinese', label: 'Chinese', icon: 'fas fa-dragon' },
+        { value: 'Italian', label: 'Italian', icon: 'fas fa-pizza-slice' },
+        { value: 'Mexican', label: 'Mexican', icon: 'fas fa-seedling' },
+        { value: 'American', label: 'American', icon: 'fas fa-hamburger' },
+        { value: 'Thai', label: 'Thai', icon: 'fas fa-leaf' },
+        { value: 'Japanese', label: 'Japanese', icon: 'fas fa-fish' },
+        { value: 'Other', label: 'Other', icon: 'fas fa-utensils' }
+      ],
       currentMenu: [],
       orders: [],
       error: '',
@@ -559,6 +594,13 @@ export default {
     
     handleImageError(event) {
       event.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'
+    }
+  },
+  computed: {
+    isFormValid() {
+      return this.newRestaurant.name.trim() && 
+             this.newRestaurant.address.trim() && 
+             this.newRestaurant.cuisineType
     }
   }
 }
@@ -949,30 +991,225 @@ export default {
   color: #333;
 }
 
-.create-form .form-row {
-  display: grid;
-  grid-template-columns: 2fr 2fr 1fr auto auto;
+.create-restaurant-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border-radius: 20px 20px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
   gap: 12px;
-  align-items: end;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.form-container {
+  padding: 32px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.form-group label i {
+  color: #ff6b35;
+  width: 20px;
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: #ff6b35;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.cuisine-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.cuisine-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.cuisine-option:hover {
+  border-color: #ff6b35;
+  background: #fff5f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+}
+
+.cuisine-option.selected {
+  border-color: #ff6b35;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+}
+
+.cuisine-option i {
+  font-size: 24px;
+}
+
+.cuisine-option span {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .create-btn {
-  padding: 12px 20px;
+  padding: 16px 32px;
   background: linear-gradient(135deg, #4CAF50, #45a049);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 16px;
 }
 
-.create-btn:hover {
+.create-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+}
+
+.create-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancel-btn {
+  padding: 16px 32px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.cancel-btn:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
 .restaurant-rating {

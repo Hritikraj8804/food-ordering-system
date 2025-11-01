@@ -98,13 +98,35 @@
         
         <!-- Delivery Address -->
         <div class="address-section">
-          <label for="deliveryAddress">Delivery Address:</label>
-          <textarea 
-            id="deliveryAddress"
-            v-model="deliveryAddress" 
-            placeholder="Enter your complete delivery address..."
-            required
-          ></textarea>
+          <div class="address-header">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Delivery Address</span>
+          </div>
+          <div class="address-input-container">
+            <div class="address-icon">
+              <i class="fas fa-home"></i>
+            </div>
+            <textarea 
+              v-model="deliveryAddress" 
+              placeholder="House/Flat/Office No., Building Name, Area, Landmark"
+              rows="3"
+              required
+            ></textarea>
+          </div>
+          <div class="address-suggestions">
+            <div class="suggestion-item" @click="fillSampleAddress('home')">
+              <i class="fas fa-home"></i>
+              <span>Home</span>
+            </div>
+            <div class="suggestion-item" @click="fillSampleAddress('work')">
+              <i class="fas fa-briefcase"></i>
+              <span>Work</span>
+            </div>
+            <div class="suggestion-item" @click="fillSampleAddress('other')">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>Other</span>
+            </div>
+          </div>
         </div>
         
         <button class="btn btn-primary" @click="placeOrder" :disabled="!deliveryAddress.trim()">
@@ -544,6 +566,15 @@ Thank you for your order!
     
     handleImageError(event) {
       event.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'
+    },
+    
+    fillSampleAddress(type) {
+      const addresses = {
+        home: 'Flat 101, Green Valley Apartments, Sector 12, Near City Mall, Landmark: Opposite Metro Station',
+        work: 'Office 205, Tech Tower, IT Park, Phase 2, Near Food Court, Landmark: Behind Shopping Complex',
+        other: 'House No. 45, Rose Garden Colony, Main Road, Near Hospital, Landmark: Next to Pharmacy'
+      }
+      this.deliveryAddress = addresses[type]
     }
   }
 }
@@ -1659,31 +1690,98 @@ Thank you for your order!
 }
 
 .address-section {
-  margin: 20px 0;
+  margin: 24px 0;
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid #e9ecef;
 }
 
-.address-section label {
-  display: block;
-  margin-bottom: 8px;
+.address-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
   font-weight: 600;
   color: #333;
+  font-size: 16px;
 }
 
-.address-section textarea {
+.address-header i {
+  color: #ff6b35;
+  font-size: 18px;
+}
+
+.address-input-container {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.address-icon {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  color: #666;
+  z-index: 2;
+}
+
+.address-input-container textarea {
   width: 100%;
   min-height: 80px;
-  padding: 12px;
+  padding: 16px 16px 16px 48px;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 12px;
   font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   resize: vertical;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
+  background: white;
 }
 
-.address-section textarea:focus {
+.address-input-container textarea:focus {
   outline: none;
   border-color: #ff6b35;
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+  transform: translateY(-1px);
+}
+
+.address-input-container textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.address-suggestions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+}
+
+.suggestion-item:hover {
+  border-color: #ff6b35;
+  background: #fff5f0;
+  color: #ff6b35;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+}
+
+.suggestion-item i {
+  font-size: 16px;
 }
 
 .btn:disabled {
