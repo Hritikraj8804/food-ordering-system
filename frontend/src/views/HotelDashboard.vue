@@ -21,62 +21,100 @@
       </div>
     </div>
     
-    <!-- Create Restaurant (only if no restaurants) -->
-    <div v-if="myRestaurants.length === 0" class="section">
-      <div class="create-form">
-      <h3>Create Your Restaurant First</h3>
-      <div class="form-group">
-        <label>Restaurant Name:</label>
-        <input v-model="newRestaurant.name" placeholder="Enter restaurant name">
-      </div>
-      <div class="form-group">
-        <label>Address:</label>
-        <input v-model="newRestaurant.address" placeholder="Enter address">
-      </div>
-      <div class="form-group">
-        <label>Cuisine Type:</label>
-        <select v-model="newRestaurant.cuisineType">
-          <option value="">Select cuisine type</option>
-          <option value="Indian">Indian</option>
-          <option value="Chinese">Chinese</option>
-          <option value="European">European</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-        <button class="create-btn" @click="createRestaurant">
+    <!-- My Restaurants -->
+    <div class="section">
+      <div class="restaurants-header">
+        <h3>My Restaurants</h3>
+        <button class="btn btn-primary" @click="showCreateForm = !showCreateForm">
           <i class="fas fa-plus"></i>
-          Create Restaurant
+          Add New Restaurant
         </button>
+      </div>
+      
+      <!-- Create Restaurant Form -->
+      <div v-if="showCreateForm" class="create-form">
+        <h4>Create New Restaurant</h4>
+        <div class="form-row">
+          <input v-model="newRestaurant.name" placeholder="Restaurant name">
+          <input v-model="newRestaurant.address" placeholder="Address">
+          <select v-model="newRestaurant.cuisineType">
+            <option value="">Select cuisine type</option>
+            <option value="Indian">Indian</option>
+            <option value="Chinese">Chinese</option>
+            <option value="European">European</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="create-btn" @click="createRestaurant">
+            <i class="fas fa-plus"></i>
+            Create
+          </button>
+          <button class="btn btn-secondary" @click="cancelCreate">
+            Cancel
+          </button>
+        </div>
+      </div>
+      
+      <!-- Restaurants List -->
+      <div v-if="myRestaurants.length === 0 && !showCreateForm" class="no-restaurants">
+        <i class="fas fa-store"></i>
+        <h4>No Restaurants Yet</h4>
+        <p>Create your first restaurant to start managing menu items</p>
+      </div>
+      
+      <div class="restaurants-grid">
+        <div v-for="restaurant in myRestaurants" :key="restaurant.id" class="restaurant-card">
+          <div class="restaurant-header">
+            <h4>{{ restaurant.name }}</h4>
+            <span class="cuisine-badge">{{ restaurant.cuisineType }}</span>
+          </div>
+          <p class="restaurant-address">
+            <i class="fas fa-map-marker-alt"></i>
+            {{ restaurant.address }}
+          </p>
+          <div class="restaurant-rating" v-if="restaurant.averageRating">
+            <div class="stars">
+              <i v-for="n in 5" :key="n" 
+                 :class="['fas fa-star', { active: n <= Math.round(restaurant.averageRating) }]"></i>
+            </div>
+            <span class="rating-text">{{ restaurant.averageRating.toFixed(1) }} ({{ restaurant.reviewCount }} reviews)</span>
+          </div>
+          <button class="select-btn" @click="selectRestaurant(restaurant)" 
+                  :class="{ active: selectedRestaurant?.id === restaurant.id }">
+            {{ selectedRestaurant?.id === restaurant.id ? 'Selected' : 'Manage Menu' }}
+          </button>
+        </div>
       </div>
     </div>
     
-    <!-- Menu Management (main focus) -->
-    <div v-if="myRestaurants.length > 0" class="card">
+    <!-- Menu Management -->
+    <div v-if="selectedRestaurant" class="card">
       <h3>Manage Menu Items</h3>
       
-      <!-- Restaurant Selector -->
-      <div class="form-group">
-        <label>Select Restaurant:</label>
-        <select v-model="selectedRestaurant" @change="loadMenu(selectedRestaurant?.id)">
-          <option :value="null">Choose a restaurant</option>
-          <option v-for="restaurant in myRestaurants" :key="restaurant.id" :value="restaurant">
-            {{ restaurant.name }}
-          </option>
-        </select>
-      </div>
+      <h3>Menu Management - {{ selectedRestaurant.name }}</h3>
       
-      <!-- Add Menu Item -->
-      <div v-if="selectedRestaurant" class="menu-management">
-        <h4>Add New Menu Item</h4>
-        <div class="form-row">
-          <input v-model="newMenuItem.name" placeholder="Item name">
-          <input v-model="newMenuItem.description" placeholder="Description">
-          <input v-model.number="newMenuItem.price" type="number" step="0.01" placeholder="Price">
-          <select v-model="newMenuItem.type">
+      <!-- Add/Edit Menu Item -->
+      <div class="menu-management">
+        <h4>{{ editingItem ? 'Edit Menu Item' : 'Add New Menu Item' }}</h4>
+        <div class="form-grid">
+          <input v-model="newMenuItem.name" placeholder="Item name" required>
+          <input v-model="newMenuItem.description" placeholder="Description" required>
+          <input v-model.number="newMenuItem.price" type="number" step="0.01" placeholder="Price" required>
+          <div class="file-input-wrapper">
+            <input type="file" ref="imageInput" @change="handleImageSelect" accept="image/*" :required="!editingItem" id="imageInput">
+            <label for="imageInput" class="file-label">{{ selectedImage ? selectedImage.name : 'Choose food image' }}</label>
+          </div>
+          <select v-model="newMenuItem.type" required>
             <option value="VEG">VEG</option>
             <option value="NON_VEG">NON_VEG</option>
           </select>
-          <button class="btn btn-success" @click="addMenuItem">Add Item</button>
+          <div class="form-actions">
+            <button class="btn btn-success" @click="editingItem ? updateMenuItem() : addMenuItem()">
+              {{ editingItem ? 'Update Item' : 'Add Item' }}
+            </button>
+            <button v-if="editingItem" class="btn btn-secondary" @click="cancelEdit()">
+              Cancel
+            </button>
+          </div>
         </div>
         
         <!-- Current Menu -->
@@ -84,13 +122,30 @@
         <div v-if="currentMenu.length === 0" class="no-items">
           No menu items yet. Add your first item above.
         </div>
-        <div v-for="item in currentMenu" :key="item.id" class="menu-item-row">
-          <div class="item-details">
-            <strong>{{ item.name }}</strong>
-            <p>{{ item.description }}</p>
+        <div class="menu-grid">
+          <div v-for="item in currentMenu" :key="item.id" class="food-card">
+            <div class="food-image">
+              <img :src="`/api/menu-items/image/${item.id}`" :alt="item.name" @error="handleImageError">
+              <div class="food-type" :class="item.type.toLowerCase()">
+                <i :class="item.type === 'VEG' ? 'fas fa-circle' : 'fas fa-stop'"></i>
+              </div>
+            </div>
+            <div class="food-content">
+              <h5>{{ item.name }}</h5>
+              <p class="food-description">{{ item.description }}</p>
+              <div class="food-footer">
+                <span class="food-price">₹{{ item.price }}</span>
+                <div class="food-actions">
+                  <button class="btn-edit" @click="editItem(item)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn-delete" @click="deleteItem(item.id)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <span class="item-price">${{ item.price }}</span>
-          <span class="item-type" :class="item.type.toLowerCase()">{{ item.type }}</span>
         </div>
       </div>
     </div>
@@ -235,8 +290,11 @@ export default {
         price: 0,
         type: 'VEG'
       },
+      editingItem: null,
+      selectedImage: null,
       myRestaurants: [],
       selectedRestaurant: null,
+      showCreateForm: false,
       currentMenu: [],
       orders: [],
       error: '',
@@ -263,6 +321,7 @@ export default {
         
         this.success = 'Restaurant created successfully!'
         this.newRestaurant = { name: '', address: '', cuisineType: '' }
+        this.showCreateForm = false
         await this.loadMyRestaurants()
         await this.loadOrders()
         
@@ -275,19 +334,43 @@ export default {
       try {
         const response = await axios.get('/api/restaurants')
         this.myRestaurants = response.data.filter(r => r.hotelOwner?.id == this.id)
+        
+        // Load reviews for each restaurant
+        for (let restaurant of this.myRestaurants) {
+          await this.loadRestaurantReviews(restaurant)
+        }
       } catch (error) {
         this.error = 'Failed to load restaurants'
       }
     },
     
-    async manageMenu(restaurant) {
+    async loadRestaurantReviews(restaurant) {
+      try {
+        const response = await axios.get(`/api/menu-items/reviews/restaurant/${restaurant.id}`)
+        const reviews = response.data
+        if (reviews.length > 0) {
+          const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+          restaurant.averageRating = totalRating / reviews.length
+          restaurant.reviewCount = reviews.length
+        }
+      } catch (error) {
+        // Ignore review loading errors
+      }
+    },
+    
+    selectRestaurant(restaurant) {
       this.selectedRestaurant = restaurant
-      await this.loadMenu(restaurant.id)
+      this.loadMenu(restaurant.id)
+    },
+    
+    cancelCreate() {
+      this.showCreateForm = false
+      this.newRestaurant = { name: '', address: '', cuisineType: '' }
     },
     
     async loadMenu(restaurantId) {
       try {
-        const response = await axios.get(`/api/menu-items/restaurant/${restaurantId}`)
+        const response = await axios.get(`/api/menu-items/restaurant/${restaurantId}/all`)
         this.currentMenu = response.data
       } catch (error) {
         this.error = 'Failed to load menu'
@@ -299,15 +382,28 @@ export default {
         this.error = ''
         this.success = ''
         
-        if (!this.newMenuItem.name || !this.newMenuItem.price) {
-          this.error = 'Please fill in all fields'
+        if (!this.newMenuItem.name || !this.newMenuItem.price || !this.selectedImage) {
+          this.error = 'Please fill in all fields and select an image'
           return
         }
         
-        await axios.post(`/api/menu-items/restaurant/${this.selectedRestaurant.id}/owner/${this.id}`, this.newMenuItem)
+        const formData = new FormData()
+        formData.append('name', this.newMenuItem.name)
+        formData.append('description', this.newMenuItem.description)
+        formData.append('price', this.newMenuItem.price.toString())
+        formData.append('type', this.newMenuItem.type)
+        formData.append('image', this.selectedImage)
+        
+        await axios.post(`/api/menu-items/restaurant/${this.selectedRestaurant.id}/owner/${this.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
         
         this.success = 'Menu item added successfully!'
         this.newMenuItem = { name: '', description: '', price: 0, type: 'VEG' }
+        this.selectedImage = null
+        if (this.$refs.imageInput) {
+          this.$refs.imageInput.value = ''
+        }
         await this.loadMenu(this.selectedRestaurant.id)
         
       } catch (error) {
@@ -381,6 +477,88 @@ export default {
         console.error('Error updating order status:', error.response?.data)
         this.error = error.response?.data?.message || 'Failed to update order status'
       }
+    },
+    
+    editItem(item) {
+      this.editingItem = item
+      this.newMenuItem = {
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        type: item.type
+      }
+      this.selectedImage = null
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = ''
+      }
+    },
+    
+    async updateMenuItem() {
+      try {
+        this.error = ''
+        this.success = ''
+        
+        if (!this.newMenuItem.name || !this.newMenuItem.price) {
+          this.error = 'Please fill in all fields'
+          return
+        }
+        
+        const formData = new FormData()
+        formData.append('name', this.newMenuItem.name)
+        formData.append('description', this.newMenuItem.description)
+        formData.append('price', this.newMenuItem.price.toString())
+        formData.append('type', this.newMenuItem.type)
+        if (this.selectedImage) {
+          formData.append('image', this.selectedImage)
+        }
+        
+        await axios.put(`/api/menu-items/${this.editingItem.id}/owner/${this.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        
+        this.success = 'Menu item updated successfully!'
+        this.cancelEdit()
+        await this.loadMenu(this.selectedRestaurant.id)
+        
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to update menu item'
+      }
+    },
+    
+    async deleteItem(itemId) {
+      if (!confirm('Are you sure you want to delete this item?')) return
+      
+      try {
+        this.error = ''
+        this.success = ''
+        
+        console.log('Deleting item:', itemId, 'Owner:', this.id)
+        await axios.delete(`/api/menu-items/${itemId}/owner/${this.id}`)
+        
+        this.success = 'Menu item deleted successfully!'
+        await this.loadMenu(this.selectedRestaurant.id)
+        
+      } catch (error) {
+        console.error('Delete error:', error.response?.data)
+        this.error = error.response?.data?.message || 'Failed to delete menu item'
+      }
+    },
+    
+    cancelEdit() {
+      this.editingItem = null
+      this.newMenuItem = { name: '', description: '', price: 0, type: 'VEG' }
+      this.selectedImage = null
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = ''
+      }
+    },
+    
+    handleImageSelect(event) {
+      this.selectedImage = event.target.files[0]
+    },
+    
+    handleImageError(event) {
+      event.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'
     }
   }
 }
@@ -468,24 +646,360 @@ export default {
   border: 2px solid #ff6b35;
 }
 
-.form-row {
+.form-grid {
   display: grid;
-  grid-template-columns: 2fr 3fr 1fr 1fr auto;
+  grid-template-columns: 1fr 2fr 1fr 2fr 1fr;
   gap: 12px;
   margin: 16px 0;
   align-items: end;
 }
 
-.form-row input, .form-row select {
+.form-grid input, .form-grid select {
   padding: 12px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   font-family: 'Poppins', sans-serif;
 }
 
-.form-row input:focus, .form-row select:focus {
+.form-grid input:focus, .form-grid select:focus {
   outline: none;
   border-color: #ff6b35;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.food-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.food-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.food-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.food-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.food-card:hover .food-image img {
+  transform: scale(1.05);
+}
+
+.food-type {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.food-type.veg {
+  background: white;
+  color: #4CAF50;
+  border: 2px solid #4CAF50;
+}
+
+.food-type.non_veg {
+  background: white;
+  color: #f44336;
+  border: 2px solid #f44336;
+}
+
+.food-content {
+  padding: 16px;
+}
+
+.food-content h5 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.3;
+}
+
+.food-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0 0 16px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.food-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.food-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ff6b35;
+}
+
+.food-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit, .btn-delete {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.btn-edit {
+  background: #2196F3;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #1976D2;
+  transform: scale(1.1);
+}
+
+.btn-delete {
+  background: #f44336;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #d32f2f;
+  transform: scale(1.1);
+}
+
+.file-input-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+.file-input-wrapper input[type=file] {
+  opacity: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.file-label {
+  padding: 12px 16px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  cursor: pointer;
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  color: #666;
+  transition: all 0.3s ease;
+  text-align: center;
+  position: relative;
+  min-height: 20px;
+}
+
+.file-label:hover {
+  border-color: #ff6b35;
+  background: #fff5f0;
+  color: #ff6b35;
+}
+
+.file-label:before {
+  content: '📁 ';
+  margin-right: 8px;
+}
+
+.restaurants-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.restaurants-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.restaurants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.restaurant-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  border: 1px solid #f0f0f0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.restaurant-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.restaurant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.restaurant-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.cuisine-badge {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.restaurant-address {
+  color: #666;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.select-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+}
+
+.select-btn.active {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+}
+
+.no-restaurants {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-restaurants i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #ddd;
+}
+
+.no-restaurants h4 {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.create-form .form-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr auto auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.create-btn {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.restaurant-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.restaurant-rating .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.restaurant-rating .stars i {
+  font-size: 14px;
+  color: #ddd;
+}
+
+.restaurant-rating .stars i.active {
+  color: #ffc107;
+}
+
+.rating-text {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
 }
 
 .menu-item-row {
