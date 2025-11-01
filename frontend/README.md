@@ -1,238 +1,240 @@
 # 🍕 Food Ordering System - Frontend
 
-A modern **Vue.js 3** frontend with responsive design for the Spring Boot food ordering system. Features role-based dashboards, real-time order tracking, and comprehensive restaurant management.
+A modern **Vue.js 3** frontend application with **JWT authentication**, **role-based routing**, and **responsive design** for the food ordering system.
 
-## 🚀 Quick Start
+## 🚀 Features
 
-### Prerequisites
-- Node.js 16+
-- npm 8+
-- Backend running on http://localhost:8080
+### **Authentication & Security**
+- ✅ **JWT Token Management** - Secure authentication with automatic token handling
+- ✅ **Route Guards** - Protected routes based on authentication status
+- ✅ **Role-based Navigation** - Different dashboards for USER and HOTEL roles
+- ✅ **Auto-logout** - Automatic logout on token expiration
+- ✅ **Persistent Sessions** - Login state maintained across browser sessions
 
-### Installation & Run
-```bash
-cd frontend
-npm install
-npm run dev
+### **User Interface**
+- ✅ **Responsive Design** - Works seamlessly on desktop and mobile
+- ✅ **Modern UI Components** - Clean, intuitive interface design
+- ✅ **Real-time Updates** - Dynamic order status tracking
+- ✅ **Interactive Elements** - Smooth animations and transitions
+- ✅ **Pagination** - 5 items per page for orders and reviews
 
-# Or use the provided script
-./start-frontend.bat
-```
-
-### Access Points
-- **Frontend UI**: http://localhost:3000
-- **Backend API**: http://localhost:8080/api
-- **Swagger Docs**: http://localhost:8080/swagger-ui.html
-
-## 🎯 Features
-
-### 👤 User (Customer) Features
-- ✅ **Registration/Login** with USER role
-- ✅ **Restaurant Discovery** - Browse all available restaurants
-- ✅ **Menu Browsing** - View restaurant menus with images
-- ✅ **Order Placement** - Add multiple items to cart and place orders
-- ✅ **Order Tracking** - Real-time order status updates
-- ✅ **Order History** - Complete order history with details
+### **Core Functionality**
+- ✅ **User Registration/Login** - Secure authentication flow
+- ✅ **Profile Management** - Update user information and manage addresses
+- ✅ **Restaurant Browsing** - View restaurants with ratings and reviews
+- ✅ **Menu Exploration** - Browse menu items with images and ratings
+- ✅ **Order Placement** - Add items to cart and place orders with saved addresses
+- ✅ **Order Tracking** - Real-time order status with visual pipeline
 - ✅ **Review System** - Rate and review menu items
-- ✅ **Responsive Design** - Works on desktop and mobile
-
-### 🏨 Hotel (Restaurant Owner) Features
-- ✅ **Registration/Login** with HOTEL role
-- ✅ **Restaurant Management** - Create and manage restaurants
-- ✅ **Menu Management** - Add menu items with image uploads
-- ✅ **Order Management** - View and manage incoming orders
-- ✅ **Status Updates** - Update order status (PREPARING, OUT_FOR_DELIVERY, DELIVERED, CANCELLED)
-- ✅ **Order History** - Complete order tracking and history
-- ✅ **Review Management** - View customer reviews and ratings
-- ✅ **Dashboard Analytics** - Order statistics and insights
-
-## 📱 Usage Flow
-
-### 🔐 Getting Started
-1. **Registration**: Choose role (USER/HOTEL) and register
-2. **Login**: Access role-specific dashboard
-
-### 👤 Customer Journey (USER)
-1. **Browse Restaurants** - View all available restaurants
-2. **Select Restaurant** - Choose restaurant and view menu
-3. **Add to Cart** - Select menu items and quantities
-4. **Place Order** - Review cart and place order
-5. **Track Order** - Monitor order status in real-time
-6. **Rate & Review** - Provide feedback after delivery
-
-### 🏨 Restaurant Owner Journey (HOTEL)
-1. **Create Restaurant** - Set up restaurant profile
-2. **Add Menu Items** - Upload menu with images and prices
-3. **Manage Orders** - View incoming orders and update status
-4. **Track Performance** - Monitor reviews and order statistics
-5. **Order History** - Access complete order management history
-
-## 🔧 API Integration
-
-The frontend integrates with these Spring Boot endpoints:
-
-### **User Management**
-- `POST /api/users/register` - User registration
-- `GET /api/users/{id}` - Get user details
-
-### **Restaurant Management**
-- `GET /api/restaurants` - List all restaurants
-- `POST /api/restaurants/{hotelOwnerId}` - Create restaurant (HOTEL only)
-- `GET /api/restaurants/{id}` - Get restaurant details
-
-### **Menu Management**
-- `POST /api/menu-items/{restaurantId}` - Add menu item (HOTEL only)
-- `GET /api/menu-items/restaurant/{restaurantId}` - Get restaurant menu
-- `POST /api/menu-items/{itemId}/upload-image` - Upload menu item image
-
-### **Order Management**
-- `POST /api/orders/{userId}/{restaurantId}` - Place order (USER only)
-- `GET /api/orders/user/{userId}` - Get user orders
-- `GET /api/orders/restaurant/{restaurantId}` - Get restaurant orders (HOTEL only)
-- `PUT /api/orders/{orderId}/status` - Update order status (HOTEL only)
-
-### **Review System**
-- `POST /api/menu-items/{itemId}/reviews` - Add review (USER only)
-- `GET /api/menu-items/reviews/restaurant/{restaurantId}` - Get restaurant reviews
-
-## 🏗️ Architecture
-
-### **Project Structure**
-```
-frontend/
-├── src/
-│   ├── views/
-│   │   ├── Login.vue              # User registration/login
-│   │   ├── UserDashboard.vue      # Customer main interface
-│   │   ├── HotelDashboard.vue     # Restaurant owner interface
-│   │   ├── UserOrderHistory.vue   # Customer order history
-│   │   ├── OrderHistory.vue       # Hotel order management
-│   │   └── ReviewsPage.vue        # Review management system
-│   ├── App.vue                    # Main application component
-│   └── main.js                    # Vue app initialization
-├── public/                        # Static assets
-├── package.json                   # Dependencies and scripts
-├── vite.config.js                 # Development server config
-├── start-frontend.bat             # Windows startup script
-└── README.md                      # This file
-```
-
-### **Component Architecture**
-```
-App.vue
-├── Login.vue (Authentication)
-├── UserDashboard.vue (Customer Interface)
-│   ├── Restaurant List
-│   ├── Menu Display
-│   ├── Cart Management
-│   └── Order Placement
-├── HotelDashboard.vue (Restaurant Owner Interface)
-│   ├── Restaurant Creation
-│   ├── Menu Management
-│   ├── Order Management
-│   └── Status Updates
-├── UserOrderHistory.vue (Customer Orders)
-├── OrderHistory.vue (Hotel Orders)
-└── ReviewsPage.vue (Review System)
-```
-
-## 🔒 Role-Based Access Control
-
-### **USER Role Permissions**
-- ✅ Browse restaurants and menus
-- ✅ Place orders with multiple items
-- ✅ Track order status in real-time
-- ✅ View complete order history
-- ✅ Rate and review menu items
-- ❌ Cannot create restaurants
-- ❌ Cannot manage other users' orders
-
-### **HOTEL Role Permissions**
-- ✅ Create and manage restaurants
-- ✅ Add menu items with images
-- ✅ View and manage incoming orders
-- ✅ Update order status
-- ✅ View customer reviews
-- ✅ Access order analytics
-- ❌ Cannot place orders
-- ❌ Cannot access other hotels' data
-
-### **Security Implementation**
-- Role validation handled by Spring Boot backend
-- 403 Forbidden responses for unauthorized actions
-- Frontend UI adapts based on user role
-- Protected routes and conditional rendering
+- ✅ **Address Management** - Save and manage multiple delivery addresses
 
 ## 🛠️ Tech Stack
 
 - **Framework**: Vue.js 3 with Composition API
-- **Build Tool**: Vite (fast development server)
-- **HTTP Client**: Axios for API communication
-- **Routing**: Vue Router 4
-- **Styling**: Modern CSS3 with Flexbox/Grid
-- **Icons**: Font Awesome
-- **Development**: Hot Module Replacement (HMR)
+- **Build Tool**: Vite for fast development and building
+- **HTTP Client**: Axios with JWT interceptors
+- **Routing**: Vue Router 4 with authentication guards
+- **Styling**: Modern CSS3 with responsive design
+- **Icons**: Font Awesome for consistent iconography
 
-## 📦 Dependencies
+## 📋 Prerequisites
 
-### **Production Dependencies**
-```json
-{
-  "vue": "^3.4.0",
-  "vue-router": "^4.2.0",
-  "axios": "^1.6.0"
-}
-```
+- Node.js 16+
+- npm 8+
+- Backend API running on `http://localhost:8080`
 
-### **Development Dependencies**
-```json
-{
-  "@vitejs/plugin-vue": "^4.5.0",
-  "vite": "^5.0.0"
-}
-```
+## ⚡ Quick Start
 
-## 🎨 UI/UX Features
-
-- **Responsive Design** - Works seamlessly on desktop and mobile
-- **Modern Interface** - Clean, intuitive user experience
-- **Real-time Updates** - Dynamic order status tracking
-- **Interactive Elements** - Smooth animations and transitions
-- **Role-based Navigation** - Different interfaces for different user types
-- **Error Handling** - User-friendly error messages
-- **Loading States** - Visual feedback during API calls
-
-## 🚀 Development Scripts
-
+### 1. Install Dependencies
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run serve
+npm install
 ```
 
-## 🔧 Configuration
+### 2. Start Development Server
+```bash
+npm run dev
+```
 
-### **Vite Configuration (vite.config.js)**
+### 3. Build for Production
+```bash
+npm run build
+```
+
+### 4. Preview Production Build
+```bash
+npm run preview
+```
+
+## 🏗️ Project Structure
+
+```
+frontend/
+├── src/
+│   ├── views/                     # Page components
+│   │   ├── Login.vue              # Authentication (Login/Register)
+│   │   ├── UserDashboard.vue      # Customer dashboard with cart
+│   │   ├── HotelDashboard.vue     # Restaurant owner dashboard
+│   │   ├── UserOrderHistory.vue   # Customer order history (Paginated)
+│   │   ├── OrderHistory.vue       # Hotel order management (Paginated)
+│   │   ├── ReviewsPage.vue        # Review management (Paginated)
+│   │   └── ProfilePage.vue        # Profile & address management
+│   ├── App.vue                    # Root component with navigation
+│   └── main.js                    # App initialization with router
+├── public/                        # Static assets
+├── package.json                   # Dependencies and scripts
+├── vite.config.js                 # Vite configuration
+└── README.md                      # This file
+```
+
+## 🔐 Authentication Flow
+
+### **Login Process**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Login     │───▶│   Backend   │───▶│  JWT Token  │───▶│  Dashboard  │
+│   Form      │    │  Validates  │    │  Generated  │    │  Redirect   │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+### **Token Management**
+- **Storage**: JWT tokens stored in localStorage
+- **Headers**: Automatic Authorization header injection
+- **Expiration**: Auto-logout on token expiration (401 responses)
+- **Cleanup**: Token removal on logout
+
+### **Route Protection**
 ```javascript
-export default {
-  server: {
-    proxy: {
-      '/api': 'http://localhost:8080'
-    }
-  }
+// Protected routes require authentication
+{
+  path: '/user/:id',
+  component: UserDashboard,
+  meta: { requiresAuth: true, role: 'USER' }
 }
 ```
 
-### **Environment Setup**
-- Backend must be running on port 8080
-- Frontend runs on port 3000
-- CORS configured in Spring Boot for cross-origin requests
+## 🎨 UI Components
+
+### **Dashboard Features**
+- **User Dashboard**: Restaurant browsing, menu viewing, cart management
+- **Hotel Dashboard**: Restaurant management, menu item creation, order tracking
+- **Order History**: Paginated order list with status pipeline visualization
+- **Profile Page**: User information and address management
+
+### **Interactive Elements**
+- **Order Status Pipeline**: Visual representation of order progress
+- **Rating System**: Star-based rating with hover effects
+- **Cart Management**: Add/remove items with quantity controls
+- **Address Selection**: Dropdown for saved addresses during checkout
+
+## 📱 Responsive Design
+
+### **Breakpoints**
+- **Desktop**: 1200px+ (Full layout with sidebars)
+- **Tablet**: 768px-1199px (Adapted layout)
+- **Mobile**: <768px (Stacked layout with mobile navigation)
+
+### **Mobile Features**
+- Touch-friendly buttons and controls
+- Optimized form layouts
+- Collapsible navigation menu
+- Swipe-friendly order cards
+
+## 🔄 State Management
+
+### **Authentication State**
+```javascript
+// User data stored in localStorage
+const user = {
+  id: 1,
+  email: "user@example.com",
+  name: "John Doe",
+  role: "USER"
+}
+
+// JWT token for API requests
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### **Route Guards**
+```javascript
+router.beforeEach((to, from, next) => {
+  const user = JSON.parse(localStorage.getItem('user'))
+  const token = localStorage.getItem('token')
+  
+  if (to.meta.requiresAuth && (!user || !token)) {
+    next('/')  // Redirect to login
+  } else {
+    next()     // Allow navigation
+  }
+})
+```
+
+## 🌐 API Integration
+
+### **Axios Configuration**
+```javascript
+// Automatic JWT token injection
+axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+// Response interceptor for token expiration
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // Auto-logout on token expiration
+      logout()
+    }
+    return Promise.reject(error)
+  }
+)
+```
+
+### **API Endpoints Used**
+- **Authentication**: `/api/auth/login`, `/api/auth/register`
+- **User Data**: `/api/users/{id}`, `/api/addresses/user/{userId}`
+- **Restaurants**: `/api/restaurants`, `/api/menu-items/restaurant/{id}`
+- **Orders**: `/api/orders/user/{userId}`, `/api/orders/{userId}/{restaurantId}`
+- **Reviews**: `/api/menu-items/{itemId}/reviews`
+
+## 🎯 Key Features by Role
+
+### **USER Role (Customers)**
+- Browse restaurants and menus
+- Add items to cart with quantity selection
+- Place orders with saved address selection
+- Track order status with visual pipeline
+- View order history with pagination
+- Rate and review menu items
+- Manage profile and delivery addresses
+
+### **HOTEL Role (Restaurant Owners)**
+- Create and manage restaurants
+- Add menu items with image uploads
+- View and manage incoming orders
+- Update order status (PREPARING → OUT_FOR_DELIVERY → DELIVERED)
+- View customer reviews with sentiment analysis
+- Access paginated order history and reviews
+
+## 🚀 Development
+
+### **Available Scripts**
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint (if configured)
+```
+
+### **Environment Variables**
+```bash
+VITE_API_BASE_URL=http://localhost:8080/api  # Backend API URL
+```
+
+### **Development Server**
+- **URL**: `http://localhost:3000`
+- **Hot Reload**: Automatic page refresh on file changes
+- **Proxy**: API requests proxied to backend server
 
 ---
 
-**Built with ❤️ using Vue.js 3, Vite & Modern Web Technologies**
+**Built with ❤️ using Vue.js 3, Vite, and modern web technologies**

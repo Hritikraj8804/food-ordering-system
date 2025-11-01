@@ -10,8 +10,7 @@ import UserOrderHistory from './views/UserOrderHistory.vue'
 import ProfilePage from './views/ProfilePage.vue'
 
 const routes = [
-  { path: '/', redirect: '/login' },
-  { path: '/login', component: Login },
+  { path: '/', component: Login },
   { 
     path: '/user/:id', 
     component: UserDashboard, 
@@ -57,10 +56,11 @@ const router = createRouter({
 
 // Navigation guard to protect routes
 router.beforeEach((to, from, next) => {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null')
+  const token = localStorage.getItem('token')
   
-  if (to.meta.requiresAuth && !currentUser) {
-    next('/login')
+  if (to.meta.requiresAuth && (!currentUser || !token)) {
+    next('/')
   } else if (to.meta.role && currentUser && currentUser.role !== to.meta.role) {
     // Redirect to appropriate dashboard if user tries to access wrong role page
     if (currentUser.role === 'USER') {

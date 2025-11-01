@@ -39,6 +39,18 @@ application-dev.properties
 *.log.*
 logs/
 
+### Development & Testing ###
+*.http
+*.rest
+test_*.http
+db/migration/
+src/main/resources/db/
+
+### Authentication ###
+*.jwt
+*.key
+*.pem
+
 ### OS ###
 .DS_Store
 .DS_Store?

@@ -1,28 +1,37 @@
 # 🍕 Swiggy Clone - Food Ordering System
 
-A full-stack **Spring Boot 3 + Vue.js 3** application demonstrating enterprise-grade development with **role-based access control**, **AOP logging**, **transaction management**, and modern web UI.
+A full-stack **Spring Boot 3 + Vue.js 3** application demonstrating enterprise-grade development with **JWT authentication**, **role-based access control**, **AOP logging**, **transaction management**, and modern web UI.
 
 ## 🚀 Features
 
 ### **Core Functionality**
+- ✅ **JWT Authentication** with secure login/logout
+- ✅ **Password Encryption** using BCrypt
 - ✅ **User Management** with role-based access (USER/HOTEL)
 - ✅ **Restaurant Management** (HOTEL users only)
 - ✅ **Menu Item Management** with image uploads
 - ✅ **Order Processing** with atomic transactions
 - ✅ **Order Status Tracking** (PREPARING, OUT_FOR_DELIVERY, DELIVERED, CANCELLED)
 - ✅ **Review & Rating System** for menu items
+- ✅ **Profile & Address Management** with saved addresses
+- ✅ **Order Pagination** (5 orders per page)
 - ✅ **RESTful API** with proper HTTP status codes
 - ✅ **Modern Vue.js Frontend** with responsive design
 
 ### **Advanced Spring Features**
+- ✅ **JWT Security** with Spring Security integration
 - ✅ **Aspect-Oriented Programming (AOP)** - Logs order placement
 - ✅ **Transaction Management** - @Transactional for data consistency
 - ✅ **Global Exception Handling** - Clean error responses
 - ✅ **Bean Validation** - Input validation with @Valid
 - ✅ **File Upload Handling** - Menu item images
+- ✅ **CORS Configuration** - Cross-origin request handling
 
 ### **Security & Access Control**
+- ✅ **JWT Token Authentication** - Stateless authentication
+- ✅ **Password Encryption** - BCrypt hashing
 - ✅ **Role-based restrictions** - USER can order, HOTEL can create restaurants
+- ✅ **Route Protection** - Frontend guards for authenticated routes
 - ✅ **403 Forbidden** responses for unauthorized actions
 - ✅ **Resource ownership validation**
 
@@ -129,9 +138,19 @@ Import `Swiggy_Clone_API_Tests.postman_collection.json` for comprehensive testin
 
 ## 📚 API Endpoints
 
+### **Authentication**
+- `POST /api/auth/register` - Register new user with encrypted password
+- `POST /api/auth/login` - Login with JWT token response
+- `POST /api/auth/logout` - Logout endpoint
+
 ### **User Management**
-- `POST /api/users/register` - Register new user
-- `GET /api/users/{id}` - Get user by ID
+- `GET /api/users/{id}` - Get user by ID (Protected)
+- `PUT /api/users/{id}/profile` - Update user profile (Protected)
+
+### **Address Management**
+- `GET /api/addresses/user/{userId}` - Get user addresses (Protected)
+- `POST /api/addresses/user/{userId}` - Save new address (Protected)
+- `DELETE /api/addresses/{addressId}` - Delete address (Protected)
 
 ### **Restaurant Management**
 - `POST /api/restaurants/{hotelOwnerId}` - Create restaurant (HOTEL only)

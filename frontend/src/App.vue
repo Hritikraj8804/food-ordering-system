@@ -28,21 +28,47 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   data() {
     return {
-      currentUser: JSON.parse(localStorage.getItem('currentUser'))
+      currentUser: JSON.parse(localStorage.getItem('user'))
     }
   },
+  mounted() {
+    // Set up axios interceptor for authentication
+    const token = localStorage.getItem('token')
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    }
+    
+    // Add response interceptor to handle token expiration
+    axios.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.response?.status === 401) {
+          this.logout()
+        }
+        return Promise.reject(error)
+      }
+    )
+  },
   methods: {
-    handleUserLogin(user) {
-      this.currentUser = user
-      localStorage.setItem('currentUser', JSON.stringify(user))
+    handleUserLogin(authData) {
+      this.currentUser = {
+        id: authData.userId,
+        email: authData.email,
+        name: authData.name,
+        role: authData.role
+      }
     },
     logout() {
       this.currentUser = null
-      localStorage.removeItem('currentUser')
-      this.$router.push('/login')
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
+      delete axios.defaults.headers.common['Authorization']
+      this.$router.push('/')
     },
     goToProfile() {
       this.$router.push(`/profile/${this.currentUser.id}`)

@@ -98,30 +98,37 @@ export default {
         this.error = ''
         this.success = ''
         
-        // Since backend doesn't have login endpoint, we'll find user by email
-        const response = await axios.get('/api/users')
-        const users = response.data
-        const user = users.find(u => u.email === this.email)
+        const response = await axios.post('/api/auth/login', {
+          email: this.email,
+          password: this.password
+        })
         
-        if (!user) {
-          this.error = 'User not found. Please register first.'
-          return
-        }
+        const authData = response.data
         
-        // In a real app, you'd verify password on backend
-        // For now, we'll just proceed with the found user
+        // Store token and user data
+        localStorage.setItem('token', authData.token)
+        localStorage.setItem('user', JSON.stringify({
+          id: authData.userId,
+          email: authData.email,
+          name: authData.name,
+          role: authData.role
+        }))
+        
+        // Set default authorization header
+        axios.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`
+        
         this.success = 'Login successful!'
-        this.$emit('user-login', user)
+        this.$emit('user-login', authData)
         
         // Redirect based on role
-        if (user.role === 'USER') {
-          this.$router.push(`/user/${user.id}`)
+        if (authData.role === 'USER') {
+          this.$router.push(`/user/${authData.userId}`)
         } else {
-          this.$router.push(`/hotel/${user.id}`)
+          this.$router.push(`/hotel/${authData.userId}`)
         }
         
       } catch (error) {
-        this.error = 'Login failed. Please check your credentials.'
+        this.error = error.response?.data?.message || 'Login failed. Please check your credentials.'
       } finally {
         this.loading = false
       }
@@ -138,23 +145,35 @@ export default {
         this.error = ''
         this.success = ''
         
-        const response = await axios.post('/api/users/register', {
+        const response = await axios.post('/api/auth/register', {
           email: this.email,
           name: this.name,
           password: this.password,
           role: this.role
         })
         
-        const user = response.data
-        this.success = 'Registration successful!'
+        const authData = response.data
         
-        this.$emit('user-login', user)
+        // Store token and user data
+        localStorage.setItem('token', authData.token)
+        localStorage.setItem('user', JSON.stringify({
+          id: authData.userId,
+          email: authData.email,
+          name: authData.name,
+          role: authData.role
+        }))
+        
+        // Set default authorization header
+        axios.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`
+        
+        this.success = 'Registration successful!'
+        this.$emit('user-login', authData)
         
         // Redirect based on role
-        if (user.role === 'USER') {
-          this.$router.push(`/user/${user.id}`)
+        if (authData.role === 'USER') {
+          this.$router.push(`/user/${authData.userId}`)
         } else {
-          this.$router.push(`/hotel/${user.id}`)
+          this.$router.push(`/hotel/${authData.userId}`)
         }
         
       } catch (error) {
