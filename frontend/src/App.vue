@@ -4,7 +4,7 @@
       <div class="container">
         <h1>
           <i class="fas fa-utensils"></i>
-          Swiggy
+          Foodie
         </h1>
         <div class="user-info">
           <button class="profile-btn" @click="goToProfile">
