@@ -158,7 +158,7 @@
             </div>
             <div class="order-details">
               <div class="restaurant-info">
-                <p><i class="fas fa-store"></i> {{ order.restaurant?.name || 'Unknown' }}</p>
+                <p><i class="fas fa-store"></i> {{ order.restaurantName || 'Unknown' }}</p>
                 <span :class="['status-badge', order.status.toLowerCase()]">{{ getStatusText(order.status) }}</span>
               </div>
               <div class="order-total">₹{{ order.totalAmount }}</div>
@@ -194,7 +194,7 @@
             <div class="bill-details">
               <div class="customer-details">
                 <h6><i class="fas fa-map-marker-alt"></i> Delivery Information</h6>
-                <p><strong>Restaurant:</strong> {{ order.restaurant?.name || 'Unknown' }}</p>
+                <p><strong>Restaurant:</strong> {{ order.restaurantName || 'Unknown' }}</p>
                 <p><strong>Order Date:</strong> {{ formatDate(order.createdAt) }}</p>
                 <p v-if="order.deliveryAddress"><strong>Address:</strong> {{ order.deliveryAddress }}</p>
               </div>

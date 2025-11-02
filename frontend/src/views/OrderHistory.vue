@@ -45,7 +45,7 @@
             <span class="order-date">{{ formatDate(order.createdAt) }}</span>
           </div>
           <div class="order-details">
-            <p><i class="fas fa-user"></i> {{ order.user?.name || 'Unknown' }}</p>
+            <p><i class="fas fa-user"></i> {{ order.userName || 'Unknown' }}</p>
             <p class="order-total">₹{{ order.totalAmount }}</p>
           </div>
         </div>

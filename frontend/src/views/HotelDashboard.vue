@@ -26,7 +26,7 @@
     </div>
     
     <!-- My Restaurants -->
-    <div class="section">
+    <div id="restaurants" class="section">
       <div class="restaurants-header">
         <h3>My Restaurants</h3>
         <button class="btn btn-primary" @click="showCreateForm = !showCreateForm">
@@ -116,14 +116,35 @@
     </div>
     
     <!-- Menu Management -->
-    <div v-if="selectedRestaurant" class="card">
-      <h3>Manage Menu Items</h3>
+    <div id="menu" v-if="selectedRestaurant" class="card">
+      <div class="menu-header">
+        <div class="menu-title">
+          <i class="fas fa-utensils"></i>
+          <h3>Menu Management</h3>
+        </div>
+        <div class="menu-actions">
+          <button v-if="!showAddForm && !editingItem" class="btn btn-primary" @click="showAddForm = true">
+            <i class="fas fa-plus"></i>
+            Add New Item
+          </button>
+          <div class="restaurant-badge">
+            <i class="fas fa-store"></i>
+            {{ selectedRestaurant.name }}
+          </div>
+        </div>
+      </div>
       
-      <h3>Menu Management - {{ selectedRestaurant.name }}</h3>
-      
-      <!-- Add/Edit Menu Item -->
-      <div class="menu-management">
-        <h4>{{ editingItem ? 'Edit Menu Item' : 'Add New Menu Item' }}</h4>
+      <!-- Add/Edit Menu Item Form -->
+      <div v-if="showAddForm || editingItem" class="menu-management">
+        <div class="form-header">
+          <h4>
+            <i class="fas {{ editingItem ? 'fa-edit' : 'fa-plus-circle' }}"></i>
+            {{ editingItem ? 'Edit Menu Item' : 'Add New Menu Item' }}
+          </h4>
+          <button class="cancel-form-btn" @click="cancelAddForm">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
         <div class="form-grid">
           <input v-model="newMenuItem.name" placeholder="Item name" required>
           <input v-model="newMenuItem.description" placeholder="Description" required>
@@ -145,11 +166,16 @@
             </button>
           </div>
         </div>
-        
-        <!-- Current Menu -->
-        <h4>Current Menu Items</h4>
+      </div>
+      
+      <!-- Current Menu -->
+      <div class="menu-section">
+        <h4>
+          <i class="fas fa-list"></i>
+          Current Menu Items
+        </h4>
         <div v-if="currentMenu.length === 0" class="no-items">
-          No menu items yet. Add your first item above.
+          No menu items yet. Add your first item using the button above.
         </div>
         <div class="menu-grid">
           <div v-for="item in currentMenu" :key="item.id" class="food-card">
@@ -180,7 +206,7 @@
     </div>
     
     <!-- Incoming Orders -->
-    <div class="card">
+    <div id="orders" class="card">
       <h3>Active Orders</h3>
       <div v-if="orders.length === 0" class="no-orders">
         <i class="fas fa-clipboard-list"></i>
@@ -194,7 +220,7 @@
             <span class="order-date">{{ formatDate(order.createdAt) }}</span>
           </div>
           <div class="order-details">
-            <p><i class="fas fa-user"></i> <strong>Customer:</strong> {{ order.user?.name || 'Unknown' }}</p>
+            <p><i class="fas fa-user"></i> <strong>Customer:</strong> {{ order.userName || 'Unknown' }}</p>
             <p class="order-total"><i class="fas fa-rupee-sign"></i> ₹{{ order.totalAmount }}</p>
           </div>
         </div>
@@ -241,7 +267,7 @@
           <div class="bill-details">
             <div class="customer-details">
               <h6><i class="fas fa-user"></i> Customer Information</h6>
-              <p><strong>Name:</strong> {{ order.user?.name || 'Unknown' }}</p>
+              <p><strong>Name:</strong> {{ order.userName || 'Unknown' }}</p>
               <p><strong>Order Date:</strong> {{ formatDate(order.createdAt) }}</p>
             </div>
             
@@ -324,6 +350,7 @@ export default {
       myRestaurants: [],
       selectedRestaurant: null,
       showCreateForm: false,
+      showAddForm: false,
       cuisineTypes: [
         { value: 'Indian', label: 'Indian', icon: 'fas fa-pepper-hot' },
         { value: 'Chinese', label: 'Chinese', icon: 'fas fa-dragon' },
@@ -438,6 +465,7 @@ export default {
         })
         
         this.success = 'Menu item added successfully!'
+        this.showAddForm = false
         this.newMenuItem = { name: '', description: '', price: 0, type: 'VEG' }
         this.selectedImage = null
         if (this.$refs.imageInput) {
@@ -592,13 +620,25 @@ export default {
       }
     },
     
+    cancelAddForm() {
+      this.showAddForm = false
+      this.editingItem = null
+      this.newMenuItem = { name: '', description: '', price: 0, type: 'VEG' }
+      this.selectedImage = null
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = ''
+      }
+    },
+    
     handleImageSelect(event) {
       this.selectedImage = event.target.files[0]
     },
     
     handleImageError(event) {
       event.target.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'
-    }
+    },
+    
+
   },
   computed: {
     isFormValid() {
@@ -615,6 +655,8 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
 }
+
+
 
 .dashboard-header {
   text-align: center;
@@ -684,12 +726,118 @@ export default {
   margin-bottom: 16px;
 }
 
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.menu-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cancel-form-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.cancel-form-btn:hover {
+  background: #d32f2f;
+  transform: scale(1.1);
+}
+
+.menu-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-title h3 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.menu-title i {
+  color: #ff6b35;
+  font-size: 20px;
+}
+
+.restaurant-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.restaurant-badge i {
+  font-size: 14px;
+}
+
 .menu-management {
   background: linear-gradient(135deg, #fff5f0, #fff8f5);
   padding: 24px;
   border-radius: 16px;
   margin-top: 24px;
   border: 2px solid #ff6b35;
+}
+
+.menu-management h4 {
+  color: #ff6b35;
+  margin-bottom: 16px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-management h4 i {
+  font-size: 16px;
+}
+
+.menu-section {
+  margin-top: 24px;
+}
+
+.menu-section h4 {
+  color: #333;
+  margin-bottom: 16px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-section h4 i {
+  color: #ff6b35;
+  font-size: 16px;
 }
 
 .form-grid {
