@@ -1,5 +1,8 @@
 # 🍕 Food Ordering System - Enterprise Spring Boot Application
 
+
+
+
 A comprehensive **Spring Boot 3 + Vue.js 3** food ordering platform demonstrating enterprise-grade development with **JWT authentication**, **role-based access control**, **AOP logging**, **transaction management**, and modern web architecture.
 
 ## 🚀 Features
@@ -122,6 +125,15 @@ npm run dev
 - **Swagger Documentation**: `http://localhost:8080/swagger-ui/index.html`
 - **Frontend UI**: `http://localhost:3000` (if running)
 - **API Docs JSON**: `http://localhost:8080/v3/api-docs`
+
+<img width="1547" height="841" alt="image" src="https://github.com/user-attachments/assets/b4cd00df-e3d7-415e-beb4-8526805e66e9" />
+
+<img width="1362" height="898" alt="image" src="https://github.com/user-attachments/assets/36d74ac6-04ec-4432-ba52-d438bd6e8797" />
+
+<img width="1192" height="858" alt="image" src="https://github.com/user-attachments/assets/4b9af2cf-1055-45ce-9389-4bc983923ac9" />
+
+<img width="1367" height="796" alt="image" src="https://github.com/user-attachments/assets/7eeff789-61dc-4cf0-8c0c-4ad1876beb99" />
+
 
 ## 🧪 Testing & API Documentation
 
