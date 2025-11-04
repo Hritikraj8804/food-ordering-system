@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import dto.MenuItemDto;
+import dto.ReviewDto;
 import entity.MenuItem;
 import entity.Review;
 import service.MenuItemService;
@@ -97,14 +98,14 @@ public class MenuItemController {
     }
     
     @GetMapping("/reviews/restaurant/{restaurantId}")
-    public ResponseEntity<List<Review>> getRestaurantReviews(@PathVariable Long restaurantId) {
-        List<Review> reviews = menuItemService.getRestaurantReviews(restaurantId);
+    public ResponseEntity<List<ReviewDto>> getRestaurantReviews(@PathVariable Long restaurantId) {
+        List<ReviewDto> reviews = menuItemService.getRestaurantReviewsDto(restaurantId);
         return ResponseEntity.ok(reviews);
     }
     
     @GetMapping("/reviews/item/{itemId}")
-    public ResponseEntity<List<Review>> getItemReviews(@PathVariable Long itemId) {
-        List<Review> reviews = menuItemService.getItemReviews(itemId);
+    public ResponseEntity<List<ReviewDto>> getItemReviews(@PathVariable Long itemId) {
+        List<ReviewDto> reviews = menuItemService.getItemReviewsDto(itemId);
         return ResponseEntity.ok(reviews);
     }
 }

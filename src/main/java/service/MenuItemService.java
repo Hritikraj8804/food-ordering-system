@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import dto.MenuItemDto;
+import dto.ReviewDto;
 import entity.MenuItem;
 import entity.Order;
 import entity.Restaurant;
@@ -151,5 +152,33 @@ public class MenuItemService {
     
     public List<Review> getItemReviews(Long itemId) {
         return reviewRepository.findByMenuItemId(itemId);
+    }
+    
+    public List<ReviewDto> getRestaurantReviewsDto(Long restaurantId) {
+        return reviewRepository.findByRestaurantId(restaurantId).stream()
+            .map(review -> new ReviewDto(
+                review.getId(),
+                review.getRating(),
+                review.getComment(),
+                review.getCreatedAt(),
+                review.getUser() != null ? review.getUser().getName() : "Anonymous",
+                review.getRestaurant() != null ? review.getRestaurant().getName() : "Unknown Restaurant",
+                review.getOrder() != null ? review.getOrder().getId() : null
+            ))
+            .collect(Collectors.toList());
+    }
+    
+    public List<ReviewDto> getItemReviewsDto(Long itemId) {
+        return reviewRepository.findByMenuItemId(itemId).stream()
+            .map(review -> new ReviewDto(
+                review.getId(),
+                review.getRating(),
+                review.getComment(),
+                review.getCreatedAt(),
+                review.getUser() != null ? review.getUser().getName() : "Anonymous",
+                review.getRestaurant() != null ? review.getRestaurant().getName() : "Unknown Restaurant",
+                review.getOrder() != null ? review.getOrder().getId() : null
+            ))
+            .collect(Collectors.toList());
     }
 }
