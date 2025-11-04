@@ -217,6 +217,7 @@
         <div class="order-header">
           <div class="order-info">
             <h4>Order #{{ order.id }}</h4>
+            <span class="restaurant-name"><i class="fas fa-store"></i> {{ order.restaurantName || 'Unknown Restaurant' }}</span>
             <span class="order-date">{{ formatDate(order.createdAt) }}</span>
           </div>
           <div class="order-details">
@@ -1617,6 +1618,19 @@ export default {
   background: linear-gradient(135deg, #ff6b35, #f7931e);
   color: white;
   border-color: #ff6b35;
+}
+
+.restaurant-name {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
 }
 
 .order-date {
