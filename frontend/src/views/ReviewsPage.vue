@@ -60,10 +60,9 @@
           <div class="customer-info">
             <i class="fas fa-user-circle"></i>
             <div>
-              <h4>{{ review.customerName }}</h4>
+              <h4>{{ review.customerName || review.userName || 'Anonymous Customer' }}</h4>
               <span class="review-date">{{ formatDate(review.createdAt) }}</span>
             </div>
-            <span class="customer-name">{{ review.user?.name || 'Anonymous' }}</span>
           </div>
           <div class="rating">
             <i v-for="n in 5" :key="n" :class="['fas fa-star', { filled: n <= review.rating }]"></i>
@@ -226,6 +225,7 @@ export default {
           }
         }
         this.reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        console.log('Review data:', this.reviews[0]); // Debug log to see available fields
         this.currentPage = 1 // Reset to first page when loading reviews
       } catch (error) {
         this.error = 'Failed to load reviews';
